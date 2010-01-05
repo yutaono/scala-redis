@@ -221,15 +221,11 @@ trait SocketOperations {
     val valueString = values.toList.map(v => "%s%d%s%s%s".format(BULK, v.length, LS, v, LS))
     withLineSeparator(noOfElements, commandLength, command, keyLength, key, valueString.mkString)
   }
-  
+
   private [redis] def withLineSeparator(s: String): String = "%s%s".format(s, LS)
   private [redis] def withLineSeparator(str: String, strs: String*): String = {
     (str :: strs.toList).mkString(LS)
   }
-  
-  def multiBulkCommand(command: String, key: String, values: String): String = {
-    "debasish"
-    }
 }
 
 object SocketOperations {

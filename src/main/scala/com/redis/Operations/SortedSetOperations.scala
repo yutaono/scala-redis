@@ -10,7 +10,6 @@ trait SortedSetOperations {
   // ZADD
   // Add the specified member having the specified score to the sorted set stored at key.
   def zAdd(key: String, score: String, member: String): Boolean = {
-    println(multiBulkCommand("ZADD", key, score, member))
     write(multiBulkCommand("ZADD", key, score, member))
     readBoolean
   }
@@ -45,7 +44,7 @@ trait SortedSetOperations {
   
   // ZRANGE
   // 
-  def zRange(key: String, start: String, end: String, sortAs: SortOrder, withScores: Boolean ): Option[Set[String]] = {
+  def zRange(key: String, start: String, end: String, sortAs: SortOrder, withScores: Boolean ): Option[List[String]] = {
     val command =
       sortAs match {
         case ASC =>
@@ -59,17 +58,17 @@ trait SortedSetOperations {
       case false => 
         write(command)
     }
-    readSet
+    readList
   }
 
   // ZRANGEBYSCORE
   // 
-  def zRangeByScore(key: String, min: String, max: String, limit: Option[(String, String)]): Option[Set[String]] = limit match {
+  def zRangeByScore(key: String, min: String, max: String, limit: Option[(String, String)]): Option[List[String]] = limit match {
     case None =>
       write(multiBulkCommand("ZRANGEBYSCORE", key, min, max))
-      readSet
+      readList
     case Some(l) =>
       write(multiBulkCommand("ZRANGEBYSCORE", key, min, max, "LIMIT", l._1, l._2))
-      readSet
+      readList
   }
 }
