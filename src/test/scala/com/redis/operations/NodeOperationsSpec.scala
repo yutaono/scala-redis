@@ -5,7 +5,9 @@ import org.specs.mock.Mockito
 import org.mockito.Mock._
 import org.mockito.Mockito._
 import org.mockito.Mockito.doNothing
+import org.specs.runner.JUnit4
 
+class NodeOperationsSpecTest extends JUnit4(NodeOperationsSpec)
 object NodeOperationsSpec extends Specification with Mockito {
 
   "Redis Client Node Operations" should {

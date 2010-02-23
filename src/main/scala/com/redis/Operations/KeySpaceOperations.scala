@@ -5,6 +5,7 @@ package com.redis.operations
  *
  */
 
+import com.redis.Connection
 trait KeySpaceOperations{
   
   val connection: Connection
@@ -15,7 +16,9 @@ trait KeySpaceOperations{
   def keys(pattern: String): Option[Array[String]] = {
     connection.write("KEYS "+pattern+"\r\n")
     connection.readResponse match {
-      case Some(s: String) => Some(s.split(" "))
+      case Some(s: String) => {
+        Some(s.split(" "))
+      }
       case _ => None
     }
   }

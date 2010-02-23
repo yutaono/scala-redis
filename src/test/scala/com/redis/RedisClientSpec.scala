@@ -6,6 +6,9 @@ import org.mockito.Mock._
 import org.mockito.Mockito._
 import org.mockito.Mockito.doNothing
 
+import org.specs.runner.JUnit4
+
+class RedisClientSpecTest extends JUnit4(RedisClientSpec)
 object RedisClientSpec extends Specification with Mockito {
 
   "Redis Client" should {
@@ -17,10 +20,12 @@ object RedisClientSpec extends Specification with Mockito {
     }
     
     "get the same connection when passing key para or not since it's a single node" in {
+      client = new Redis("localhost", 121212)
       client.getConnection("key") mustEqual client.getConnection
     }
     
     "use db zero as default" in {
+      client = new Redis("localhost", 121212)
       client.db mustEqual 0
     }
   }

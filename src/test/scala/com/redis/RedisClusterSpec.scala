@@ -5,7 +5,9 @@ import org.specs.mock.Mockito
 import org.mockito.Mock._
 import org.mockito.Mockito._
 import org.mockito.Mockito.doNothing
+import org.specs.runner.JUnit4
 
+class RedisClusterSpecTest extends JUnit4(RedisClusterSpec)
 object RedisClusterSpec extends Specification with Mockito {
 
   "Redis Cluster" should {
@@ -22,6 +24,8 @@ object RedisClusterSpec extends Specification with Mockito {
     }
     
     "get the connection for the specified key" in {
+      println("cluster = " + cluster)
+      println("cluster key = " + cluster.getConnection("key"))
       cluster.getConnection("key") mustEqual Connection("localhost", 99991)
       cluster.getConnection("anotherkey") mustEqual Connection("localhost", 11221)
     }

@@ -1,6 +1,7 @@
 package com.redis.operations
 
 import com.redis.SocketOperations._
+import com.redis.Connection
 
 trait SortedSetOperations {
   val connection: Connection

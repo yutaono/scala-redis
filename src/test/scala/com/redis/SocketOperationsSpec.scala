@@ -8,17 +8,24 @@ import org.specs.mock.Mockito
 import org.mockito.Mock._
 import org.mockito.Mockito._
 
-class SocketOperationTest(val host:String, val port: Int) extends SocketOperations
+import org.specs.runner.JUnit4
+
+class SocketOperationsSpecTest extends JUnit4(SocketOperationsSpec)
+
+class SocketOperation(val host:String, val port: Int) extends SocketOperations {
+  override def write(data: String) = data
+}
+
 
 object SocketOperationsSpec extends Specification with Mockito {
   
   "Socket Operations" should {
-    var socketOperation: SocketOperationTest = null
+    var socketOperation: SocketOperation = null
     var socket: Socket = null
     var in: BufferedReader = null
     
     doBefore {
-      socketOperation = new SocketOperationTest("localhost", 6379666)
+      socketOperation = new SocketOperation("localhost", 6379666)
       socket = mock[Socket]
       in = mock[BufferedReader]
       socketOperation.socket = socket

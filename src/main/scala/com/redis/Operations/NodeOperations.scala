@@ -5,6 +5,8 @@ package com.redis.operations
  *
  */
 
+import com.redis.Connection
+
 trait NodeOperations {
   
   val connection: Connection

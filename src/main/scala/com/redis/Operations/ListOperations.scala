@@ -5,6 +5,7 @@ package com.redis.operations
  *
  */
 
+import com.redis.Connection
 trait ListOperations{
   
   def getConnection(key: String): Connection

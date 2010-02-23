@@ -4,7 +4,9 @@ import com.redis._
 import org.specs.mock.Mockito
 import org.mockito.Mock._
 import org.mockito.Mockito._
+import org.specs.runner.JUnit4
 
+class SortOperationsSpecTest extends JUnit4(SortOperationsSpec)
 object SortOperationsSpec extends Specification with Mockito {
   
   "Redis Client Sort Operations" should {
