@@ -18,13 +18,6 @@ http://code.google.com/p/redis/
 - Key value get, set, delete, etc.
 - Atomic operations on sets and lists, union, intersection, trim, etc.
 
-## NOTE:
-
-For 2.8 port, sbt is still not working. Use maven for the time being.
-
-  $ mvn compile
-  $ mvn test
-
 ## Requirements
 
 - sbt (get it at http://code.google.com/p/simple-build-tool/)
