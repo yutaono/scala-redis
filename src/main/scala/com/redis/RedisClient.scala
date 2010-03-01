@@ -1,39 +1,38 @@
 package com.redis
 
-import com.redis.operations._
-
-/**
- * Redis client
- *
- */
-
-class Redis(val host: String, val port: Int) extends Operations 
-  with ListOperations 
-  with SetOperations 
-  with NodeOperations 
-  with KeySpaceOperations 
-  with SortOperations
-  with SortedSetOperations {
-  
-  // auxiliary constructor
-  def this() = this("localhost", 6379)
-  
-  // Points to the connection to a server instance
-  val connection = Connection(host, port)
-  var db: Int = 0
-  
-  // Connect and Disconnect to the Redis server
-  def connect = connection.connect
-  def disconnect = connection.disconnect
-  def connected: Boolean = connection.connected
-  
-  // Establish the connection to the server instance on initialize
-  connect
-  
-  // Get Redis Client connection.
-  def getConnection(key: String) = getConnection
-  def getConnection = connection
-  
-  // Outputs a formatted representation of the Redis server.
-  override def toString = connection.host+":"+connection.port+" <connected:"+connection.connected+">"
+object RedisClient {
+  trait SortOrder
+  case object ASC extends SortOrder
+  case object DESC extends SortOrder
 }
+
+class RedisClient(val host: String, val port: Int)
+  extends IO 
+  with Protocol
+  with Operations 
+  with StringOperations
+  with ListOperations
+  with SetOperations
+  with SortedSetOperations {
+
+  connect
+
+  def this() = this("localhost", 6379)
+
+  def send(command: String, key: String, values: String*) = {
+    snd(command, key, values:_*) { write }
+  }
+
+  def send(command: String) = {
+    snd(command) { write }
+  }
+
+  def cmd(command: String, key: String, values: String*) = {
+    MultiBulkCommand(command, key, values:_*).toString
+  }
+
+  def cmd(command: String) = {
+    InlineCommand(command).toString
+  }
+}
+
