@@ -44,20 +44,30 @@ trait SortedSetOperations { self: RedisClient =>
   import RedisClient._
 
   def zrange(key: String, start: String, end: String, sortAs: SortOrder, withScores: Boolean ): Option[List[Option[String]]] = {
-    val command =
+    val sort =
       sortAs match {
-        case ASC =>
-          cmd("ZRANGE", key, start, end)
-        case DESC =>
-          cmd("ZREVRANGE", key, start, end)
+        case ASC => "ZRANGE"
+        case _ => "ZREVRANGE"
       }
-    withScores match {
-      case true =>
-        send(command + "WITHSCORES" + Commands.LS)
-      case false => 
-        send(command)
-    }
+    val command = 
+      withScores match {
+        case true => cmd(sort, key, start, end, "WITHSCORES")
+        case _ => cmd(sort, key, start, end)
+      }
+    send(command)
     asList
+  }
+
+  def zrangeWithScore(key: String, start: String, end: String, sortAs: SortOrder): Option[List[(Option[String], Option[String])]] = {
+    zrange(key, start, end, sortAs, true) match {
+      case None => None
+      case Some(l) => Some(makeTuple(l))
+    }
+  }
+
+  private def makeTuple(l: List[Option[String]]): List[(Option[String], Option[String])] = l match {
+    case List() => List()
+    case a :: b :: rest => (a, b) :: makeTuple(rest)
   }
 
   // ZRANGEBYSCORE
