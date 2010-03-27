@@ -87,11 +87,11 @@ class StringOperationsSpec extends Spec
     }
     it("should increment by 5 for a key that contains a number") {
       r.set("anshin-3", "10") should equal(true)
-      r.incrBy("anshin-3", 5) should equal(Some(15))
+      r.incrby("anshin-3", 5) should equal(Some(15))
     }
     it("should reset to 0 and then increment by 5 for a key that contains a diff type") {
       r.set("anshin-4", "debasish") should equal(true)
-      r.incrBy("anshin-4", 5) should equal(Some(5))
+      r.incrby("anshin-4", 5) should equal(Some(5))
     }
   }
 
@@ -106,11 +106,11 @@ class StringOperationsSpec extends Spec
     }
     it("should decrement by 5 for a key that contains a number") {
       r.set("anshin-3", "10") should equal(true)
-      r.decrBy("anshin-3", 5) should equal(Some(5))
+      r.decrby("anshin-3", 5) should equal(Some(5))
     }
     it("should reset to 0 and then decrement by 5 for a key that contains a diff type") {
       r.set("anshin-4", "debasish") should equal(true)
-      r.decrBy("anshin-4", 5) should equal(Some(-5))
+      r.decrby("anshin-4", 5) should equal(Some(-5))
     }
   }
 

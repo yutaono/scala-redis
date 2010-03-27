@@ -43,10 +43,12 @@ trait StringOperations { self: Redis =>
 
   // INCR (key, increment)
   // increments the specified key by increment
-  def incrBy(key: String, increment: Int): Option[Int] = {
+  def incrby(key: String, increment: Int): Option[Int] = {
     send("INCRBY", key, String.valueOf(increment))
     asInt
   }
+
+  @deprecated def incrBy(key: String, increment: Int) = incrby(key, increment)
 
   // DECR (key)
   // decrements the specified key by 1
@@ -57,10 +59,12 @@ trait StringOperations { self: Redis =>
 
   // DECR (key, increment)
   // decrements the specified key by increment
-  def decrBy(key: String, increment: Int): Option[Int] = {
+  def decrby(key: String, increment: Int): Option[Int] = {
     send("DECRBY", key, String.valueOf(increment))
     asInt
   }
+
+  @deprecated def decrBy(key: String, increment: Int) = decrby(key, increment)
 
   // MGET (key, key, key, ...)
   // get the values of all the specified keys.

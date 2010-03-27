@@ -32,6 +32,8 @@ trait Deque[A] {
   def size: Int
 }
 
+import com.redis.ListOperations
+
 trait RedisDeque
   extends Deque[String] { self: ListOperations =>
 
