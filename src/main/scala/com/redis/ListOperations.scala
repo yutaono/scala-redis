@@ -1,7 +1,6 @@
 package com.redis
 
-trait ListOperations { self: RedisClient =>
-  import self._
+trait ListOperations { self: Redis =>
 
   // LPUSH
   // add string value to the head of the list stored at key
@@ -82,5 +81,10 @@ trait ListOperations { self: RedisClient =>
   def rpoplpush(srcKey: String, dstKey: String): Option[String] = {
     send("RPOPLPUSH", srcKey, dstKey)
     asString
+  }
+
+  def blpop(timeoutInSeconds: Int, key: String, keys: String*): Option[List[Option[String]]] = {
+    send("BLPOP", key, (keys.toList ::: List(String.valueOf(timeoutInSeconds))): _*)
+    asList
   }
 }

@@ -32,9 +32,10 @@ class ListOperationsSpec extends Spec
       r.lpush("list-1", "foo") should equal(true)
       r.lpush("list-1", "bar") should equal(true)
     }
-    it("should return false if the key has a non-list value") {
+    it("should throw if the key has a non-list value") {
       r.set("anshin-1", "debasish") should equal(true)
-      r.lpush("anshin-1", "bar") should equal(false)
+      val thrown = evaluating { r.lpush("anshin-1", "bar") } should produce [Exception]
+      thrown.getMessage should equal("ERR Operation against a key holding the wrong kind of value")
     }
   }
 
@@ -43,9 +44,10 @@ class ListOperationsSpec extends Spec
       r.rpush("list-1", "foo") should equal(true)
       r.rpush("list-1", "bar") should equal(true)
     }
-    it("should return false if the key has a non-list value") {
+    it("should throw if the key has a non-list value") {
       r.set("anshin-1", "debasish") should equal(true)
-      r.rpush("anshin-1", "bar") should equal(false)
+      val thrown = evaluating { r.rpush("anshin-1", "bar") } should produce [Exception]
+      thrown.getMessage should equal("ERR Operation against a key holding the wrong kind of value")
     }
   }
 
@@ -58,9 +60,10 @@ class ListOperationsSpec extends Spec
     it("should return 0 for a non-existent key") {
       r.llen("list-2").get should equal(0)
     }
-    it("should return None for a non-list key") {
+    it("should throw for a non-list key") {
       r.set("anshin-1", "debasish") should equal(true)
-      r.llen("anshin-1") should equal(None)
+      val thrown = evaluating { r.llen("anshin-1") } should produce [Exception]
+      thrown.getMessage should equal("ERR Operation against a key holding the wrong kind of value")
     }
   }
 
@@ -155,7 +158,8 @@ class ListOperationsSpec extends Spec
       r.lpush("list-1", "6") should equal(true)
       r.lpush("list-1", "5") should equal(true)
       r.lpush("list-1", "4") should equal(true)
-      r.lset("list-1", 12, "30") should equal(false)
+      val thrown = evaluating { r.lset("list-1", 12, "30") } should produce [Exception]
+      thrown.getMessage should equal("ERR index out of range")
     }
   }
 
@@ -266,4 +270,14 @@ class ListOperationsSpec extends Spec
       r.rpoplpush("list-1", "list-2") should equal(Some("b"))
     }
   }
+
+  /**
+  describe("blpop") {
+    it ("should do") {
+      r.lpush("l1", "a") should equal(true)
+      r.lpop("l1")
+      r.llen("l1") should equal(Some(0))
+    }
+  }
+**/
 }

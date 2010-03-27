@@ -1,7 +1,6 @@
 package com.redis
 
-trait NodeOperations { self: RedisClient =>
-  import self._
+trait NodeOperations { self: Redis =>
 
   // SAVE
   // save the DB on disk now.

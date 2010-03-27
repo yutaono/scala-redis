@@ -6,18 +6,11 @@ object RedisClient {
   case object DESC extends SortOrder
 }
 
-class RedisClient(val host: String, val port: Int)
-  extends IO 
-  with Protocol
-  with Operations 
-  with StringOperations
-  with ListOperations
-  with SetOperations
-  with SortedSetOperations {
+// class Redis(val host: String, val port: Int) extends IO with Protocol {
+trait Redis extends IO with Protocol {
 
-  connect
-
-  def this() = this("localhost", 6379)
+  val host: String
+  val port: Int
 
   def send(command: String, key: String, values: String*) = {
     snd(command, key, values:_*) { write }
@@ -36,3 +29,15 @@ class RedisClient(val host: String, val port: Int)
   }
 }
 
+class RedisClient(override val host: String, override val port: Int)
+  extends Redis
+  with Operations 
+  with StringOperations
+  with ListOperations
+  with SetOperations
+  with SortedSetOperations {
+
+  connect
+
+  def this() = this("localhost", 6379)
+}
