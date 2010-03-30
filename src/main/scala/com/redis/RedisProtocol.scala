@@ -60,7 +60,7 @@ private [redis] trait Reply {
         case BULK :: s => bulkReply(s.mkString)
         case MULTI :: s => multiBulkReply(s.mkString)
         case ERR :: s => throw new Exception(s.mkString)
-        case _ => None
+        case x => throw new Exception("Protocol error: Got " + x + " as initial reply byte")
       }
   }
 

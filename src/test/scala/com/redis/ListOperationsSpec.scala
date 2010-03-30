@@ -20,7 +20,7 @@ class ListOperationsSpec extends Spec
   }
 
   override def afterEach = {
-    r.flushDb
+    r.flushdb
   }
 
   override def afterAll = {

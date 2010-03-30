@@ -1,6 +1,6 @@
 package com.redis
 
-trait Operations { self: RedisClient =>
+trait Operations { self: Redis =>
 
   // KEYS
   // returns all the keys matching the glob-style pattern.
