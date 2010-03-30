@@ -20,7 +20,7 @@ class OperationsSpec extends Spec
   }
 
   override def afterEach = {
-    r.flushDb
+    r.flushdb
   }
 
   override def afterAll = {
@@ -42,7 +42,7 @@ class OperationsSpec extends Spec
     it("should give") {
       r.set("anshin-1", "debasish")
       r.set("anshin-2", "maulindu")
-      r.randomKey match {
+      r.randkey match {
         case Some(s: String) => s should startWith("anshin") 
         case None => fail("should have 2 elements")
       }
@@ -54,7 +54,8 @@ class OperationsSpec extends Spec
       r.set("anshin-1", "debasish")
       r.set("anshin-2", "maulindu")
       r.rename("anshin-2", "anshin-2-new") should equal(true)
-      r.rename("anshin-2", "anshin-2-new") should equal(false)
+      val thrown = evaluating { r.rename("anshin-2", "anshin-2-new") } should produce[Exception]
+      thrown.getMessage should equal ("ERR no such key")
     }
   }
 
@@ -71,7 +72,7 @@ class OperationsSpec extends Spec
     it("should give") {
       r.set("anshin-1", "debasish")
       r.set("anshin-2", "maulindu")
-      r.dbSize.get should equal(2)
+      r.dbsize.get should equal(2)
     }
   }
 

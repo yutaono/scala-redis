@@ -20,7 +20,7 @@ class StringOperationsSpec extends Spec
   }
 
   override def afterEach = {
-    r.flushDb
+    r.flushdb
   }
 
   override def afterAll = {
@@ -57,7 +57,7 @@ class StringOperationsSpec extends Spec
         case Some(s: String) => s should equal("debasish")
         case None => fail("should return debasish")
       }
-      r.getSet("anshin-1", "maulindu") match {
+      r.getset("anshin-1", "maulindu") match {
         case Some(s: String) => s should equal("debasish")
         case None => fail("should return debasish")
       }
@@ -71,8 +71,8 @@ class StringOperationsSpec extends Spec
   describe("setnx") {
     it("should set only if the key does not exist") {
       r.set("anshin-1", "debasish") should equal(true)
-      r.setUnlessExists("anshin-1", "maulindu") should equal(false)
-      r.setUnlessExists("anshin-2", "maulindu") should equal(true)
+      r.setnx("anshin-1", "maulindu") should equal(false)
+      r.setnx("anshin-2", "maulindu") should equal(true)
     }
   }
 
@@ -87,11 +87,11 @@ class StringOperationsSpec extends Spec
     }
     it("should increment by 5 for a key that contains a number") {
       r.set("anshin-3", "10") should equal(true)
-      r.incrBy("anshin-3", 5) should equal(Some(15))
+      r.incrby("anshin-3", 5) should equal(Some(15))
     }
     it("should reset to 0 and then increment by 5 for a key that contains a diff type") {
       r.set("anshin-4", "debasish") should equal(true)
-      r.incrBy("anshin-4", 5) should equal(Some(5))
+      r.incrby("anshin-4", 5) should equal(Some(5))
     }
   }
 
@@ -106,11 +106,11 @@ class StringOperationsSpec extends Spec
     }
     it("should decrement by 5 for a key that contains a number") {
       r.set("anshin-3", "10") should equal(true)
-      r.decrBy("anshin-3", 5) should equal(Some(5))
+      r.decrby("anshin-3", 5) should equal(Some(5))
     }
     it("should reset to 0 and then decrement by 5 for a key that contains a diff type") {
       r.set("anshin-4", "debasish") should equal(true)
-      r.decrBy("anshin-4", 5) should equal(Some(-5))
+      r.decrby("anshin-4", 5) should equal(Some(-5))
     }
   }
 
@@ -137,15 +137,15 @@ class StringOperationsSpec extends Spec
     }
 
     it("should set all keys only if none of them exist") {
-      r.msetUnlessExists(
+      r.msetnx(
         ("anshin-4", "debasish"), 
         ("anshin-5", "maulindu"),
         ("anshin-6", "nilanjan")) should equal(true)
-      r.msetUnlessExists(
+      r.msetnx(
         ("anshin-7", "debasish"), 
         ("anshin-8", "maulindu"),
         ("anshin-6", "nilanjan")) should equal(false)
-      r.msetUnlessExists(
+      r.msetnx(
         ("anshin-4", "debasish"), 
         ("anshin-5", "maulindu"),
         ("anshin-6", "nilanjan")) should equal(false)

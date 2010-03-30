@@ -20,7 +20,7 @@ class SetOperationsSpec extends Spec
   }
 
   override def afterEach = {
-    r.flushDb
+    r.flushdb
   }
 
   override def afterAll = {
@@ -38,7 +38,8 @@ class SetOperationsSpec extends Spec
     }
     it("should fail if the key points to a non-set") {
       r.lpush("list-1", "foo") should equal(true)
-      r.sadd("list-1", "foo") should equal(None)
+      val thrown = evaluating { r.sadd("list-1", "foo") } should produce [Exception]
+      thrown.getMessage should equal("ERR Operation against a key holding the wrong kind of value")
     }
   }
 
@@ -55,7 +56,8 @@ class SetOperationsSpec extends Spec
     }
     it("should fail if the key points to a non-set") {
       r.lpush("list-1", "foo") should equal(true)
-      r.srem("list-1", "foo") should equal(None)
+      val thrown = evaluating { r.srem("list-1", "foo") } should produce [Exception]
+      thrown.getMessage should equal("ERR Operation against a key holding the wrong kind of value")
     }
   }
 
@@ -96,7 +98,8 @@ class SetOperationsSpec extends Spec
       r.lpush("list-1", "bar") should equal(true)
       r.lpush("list-1", "baz") should equal(true)
       r.sadd("set-1", "foo").get should equal(1)
-      r.smove("list-1", "set-1", "bat") should equal(None)
+      val thrown = evaluating { r.smove("list-1", "set-1", "bat") } should produce [Exception]
+      thrown.getMessage should equal("ERR Operation against a key holding the wrong kind of value")
     }
   }
 

@@ -3,7 +3,7 @@ package com.redis
 private [redis] object Commands {
 
   // Response codes from the Redis server
-  val ERR    = "-"
+  val ERR    = '-'
   val OK     = "OK"
   val SINGLE = '+'
   val BULK   = '$'
@@ -59,7 +59,8 @@ private [redis] trait Reply {
         case SINGLE :: s => singleLineReply(s.mkString)
         case BULK :: s => bulkReply(s.mkString)
         case MULTI :: s => multiBulkReply(s.mkString)
-        case _ => None
+        case ERR :: s => throw new Exception(s.mkString)
+        case x => throw new Exception("Protocol error: Got " + x + " as initial reply byte")
       }
   }
 
@@ -107,7 +108,7 @@ private [redis] trait R extends Reply {
   }
 
   def asBoolean: Boolean = receive match {
-    case Some(1) => true
+    case Some(i: Int) if i > 0 => true
     case Some(OK) => true
     case _ => false
   }

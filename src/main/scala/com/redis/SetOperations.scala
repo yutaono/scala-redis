@@ -1,7 +1,6 @@
 package com.redis
 
-trait SetOperations { self: RedisClient =>
-  import self._
+trait SetOperations { self: Redis =>
 
   // SADD
   // Add the specified member to the set value stored at key.

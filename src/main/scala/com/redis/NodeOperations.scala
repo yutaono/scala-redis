@@ -1,7 +1,6 @@
 package com.redis
 
-trait NodeOperations { self: RedisClient =>
-  import self._
+trait NodeOperations { self: Redis =>
 
   // SAVE
   // save the DB on disk now.
@@ -53,7 +52,7 @@ trait NodeOperations { self: RedisClient =>
   
   // SLAVEOF
   // The SLAVEOF command can change the replication settings of a slave on the fly.
-  def slaveOf(options: Any): Boolean = options match {
+  def slaveof(options: Any): Boolean = options match {
     case (host: String, port: Int) => {
       send("SLAVEOF", host, String.valueOf(port))
       asBoolean
@@ -61,6 +60,8 @@ trait NodeOperations { self: RedisClient =>
     case _ => setAsMaster
   }
   
+  @deprecated("use slaveof") def slaveOf(options: Any): Boolean = slaveof(options)
+
   private def setAsMaster: Boolean = {
     send("SLAVEOF NO ONE")
     asBoolean

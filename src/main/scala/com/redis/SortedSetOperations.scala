@@ -1,7 +1,6 @@
 package com.redis
 
-trait SortedSetOperations { self: RedisClient =>
-  import self._
+trait SortedSetOperations { self: Redis =>
   
   // ZADD
   // Add the specified member having the specified score to the sorted set stored at key.

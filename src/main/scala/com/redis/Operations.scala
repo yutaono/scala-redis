@@ -1,7 +1,6 @@
 package com.redis
 
-trait Operations { self: RedisClient =>
-  import self._
+trait Operations { self: Redis =>
 
   // KEYS
   // returns all the keys matching the glob-style pattern.
@@ -15,10 +14,12 @@ trait Operations { self: RedisClient =>
 
   // RANDKEY
   // return a randomly selected key from the currently selected DB.
-  def randomKey: Option[String] = {
+  def randkey: Option[String] = {
     send("RANDOMKEY")
     asString
   }
+
+  @deprecated("use randkey") def randomKey = randkey
   
   // RENAME (oldkey, newkey)
   // atomically renames the key oldkey to newkey.
@@ -36,10 +37,12 @@ trait Operations { self: RedisClient =>
   
   // DBSIZE
   // return the size of the db.
-  def dbSize: Option[Int] = {
+  def dbsize: Option[Int] = {
     send("DBSIZE")
     asInt
   }
+
+  @deprecated("use dbsize") def dbSize = dbsize 
 
   // EXISTS (key)
   // test if the specified key exists.
@@ -71,7 +74,7 @@ trait Operations { self: RedisClient =>
 
   // SELECT (index)
   // selects the DB to connect, defaults to 0 (zero).
-  def selectDb(index: Int): Boolean = {
+  def select(index: Int): Boolean = {
     send("SELECT", String.valueOf(index))
     asBoolean match {
       case true => {
@@ -81,20 +84,26 @@ trait Operations { self: RedisClient =>
       case _ => false
     }
   }
+
+  @deprecated("use selectdb") def selectDb(index: Int) = select(index)
   
   // FLUSHDB the DB
   // removes all the DB data.
-  def flushDb: Boolean = {
+  def flushdb: Boolean = {
     send("FLUSHDB")
     asBoolean
   }
   
+  @deprecated("use flushdb") def flushDb = flushdb
+
   // FLUSHALL the DB's
   // removes data from all the DB's.
-  def flushAll: Boolean = {
+  def flushall: Boolean = {
     send("FLUSHALL")
     asBoolean
   }
+
+  def flushAll = flushall
 
   // MOVE
   // Move the specified key from the currently selected DB to the specified destination DB.
