@@ -17,6 +17,7 @@ class DequeSpec extends Spec
   val r = new RedisDequeClient("localhost", 6379).mkDeque("td")
 
   override def beforeEach = {
+    r.clear
   }
 
   override def afterEach = {
@@ -24,9 +25,10 @@ class DequeSpec extends Spec
   }
 
   override def afterAll = {
+    r.clear
   }
 
-  describe("addFirst") {
+  describe("addFirst and check size and added element") {
     it("should add to the head of the deque") {
       r.addFirst("foo") should equal(true)
       r.peekFirst should equal(Some("foo"))
@@ -36,6 +38,40 @@ class DequeSpec extends Spec
       r.clear should equal(true)
       r.size should equal(0)
       r.isEmpty should equal(true)
+      r.addFirst("foo") should equal(true)
+    }
+  }
+
+  describe("addLast and check size and added element") {
+    it("should add to the head of the deque") {
+      r.addLast("foo") should equal(true)
+      r.peekFirst should equal(Some("foo"))
+      r.addLast("bar") should equal(true)
+      r.peekFirst should equal(Some("foo"))
+      r.size should equal(2)
+      r.isEmpty should equal(false)
+    }
+  }
+
+  describe("poll") {
+    it("should pull out first element") {
+      r.addFirst("foo") should equal(true)
+      r.addFirst("bar") should equal(true)
+      r.addFirst("baz") should equal(true)
+      r.poll should equal(Some("baz"))
+      r.poll should equal(Some("bar"))
+      r.poll should equal(Some("foo"))
+    }
+  }
+
+  describe("pollLast") {
+    it("should pull out last element") {
+      r.addFirst("foo") should equal(true)
+      r.addFirst("bar") should equal(true)
+      r.addFirst("baz") should equal(true)
+      r.pollLast should equal(Some("foo"))
+      r.pollLast should equal(Some("bar"))
+      r.pollLast should equal(Some("baz"))
     }
   }
 }

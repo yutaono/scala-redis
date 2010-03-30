@@ -65,7 +65,13 @@ trait RedisDeque
 
   def isEmpty = size == 0
 
-  def clear = ltrim(key, -1, 0)
+  def clear = size match {
+    case 0 => true
+    case 1 => 
+      val n = poll
+      true
+    case x => ltrim(key, -1, 0)
+  }
 }
 
 import com.redis.{Redis, ListOperations}
