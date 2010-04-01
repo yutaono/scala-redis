@@ -35,7 +35,11 @@ case class HashRing[T](nodes: List[T], replicas: Int) {
   def getNode(key: String): T = {
     val crc = calculateChecksum(key)
     if (sortedKeys contains crc) ring(crc)
-    else ring(sortedKeys.rangeImpl(None, Some(crc)).lastKey)
+    else {
+      if (crc < sortedKeys.firstKey) ring(sortedKeys.firstKey)
+      else if (crc > sortedKeys.lastKey) ring(sortedKeys.lastKey)
+      else ring(sortedKeys.rangeImpl(None, Some(crc)).lastKey)
+    }
   }
 
   // Computes the CRC-32 of the given String

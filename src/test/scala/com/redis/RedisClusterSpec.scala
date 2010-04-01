@@ -14,7 +14,9 @@ class RedisClusterSpec extends Spec
                        with BeforeAndAfterEach
                        with BeforeAndAfterAll {
 
-  val r = new RedisCluster("localhost:6379", "localhost:6380", "localhost:6381")
+  val r = new RedisCluster("localhost:6379", "localhost:6380", "localhost:6381") {
+    val keyTag = Some(RegexKeyTag)
+  }
 
   override def beforeEach = {
   }
@@ -104,10 +106,10 @@ class RedisClusterSpec extends Spec
       r.lpush("java-virtual-machine-{langs}", "groovy") should equal(true)
       r.lpush("java-virtual-machine-{langs}", "scala") should equal(true)
       r.llen("java-virtual-machine-{langs}") should equal(Some(4))
-      r.lpush("favorite-{langs}", "c++") should equal(true)
-      r.rpoplpush("java-virtual-machine-{langs}", "favorite-{langs}").get should equal("java")
+      r.lpush("microsoft-platform-{langs}", "c++") should equal(true)
+      r.rpoplpush("java-virtual-machine-{langs}", "microsoft-platform-{langs}").get should equal("java")
       r.llen("java-virtual-machine-{langs}") should equal(Some(3))
-      r.llen("favorite-{langs}") should equal(Some(2))
+      r.llen("microsoft-platform-{langs}") should equal(Some(2))
     }
   }
 }
