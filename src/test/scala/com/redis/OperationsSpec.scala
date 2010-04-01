@@ -86,12 +86,12 @@ class OperationsSpec extends Spec
     }
   }
 
-  describe("delete") {
+  describe("del") {
     it("should give") {
       r.set("anshin-1", "debasish")
       r.set("anshin-2", "maulindu")
-      r.delete("anshin-2", "anshin-1").get should equal(2)
-      r.delete("anshin-2", "anshin-1").get should equal(0)
+      r.del("anshin-2", "anshin-1").get should equal(2)
+      r.del("anshin-2", "anshin-1").get should equal(0)
     }
   }
 
