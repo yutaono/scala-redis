@@ -7,7 +7,7 @@ trait Operations { self: Redis =>
   def keys(pattern: String): Option[Array[String]] = {
     send("KEYS", pattern)
     asString match {
-      case Some(s) => Some(s split " ")
+      case Some(s) if s.size > 0 => Some(s split " ")
       case _ => None
     }
   }
@@ -53,11 +53,12 @@ trait Operations { self: Redis =>
 
   // DELETE (key1 key2 ..)
   // deletes the specified keys.
-  def delete(key: String, keys: String*): Option[Int] = {
+  def del(key: String, keys: String*): Option[Int] = {
     send("DEL", key, keys: _*)
     asInt
   }
 
+  @deprecated("use del") def delete(key: String, keys: String*) = del(key, keys: _*)
   // TYPE (key)
   // return the type of the value stored at key in form of a string.
   def getType(key: String): Option[String] = {
