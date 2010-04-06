@@ -67,14 +67,12 @@ trait IO {
     }
   }
 
-  def readLine: Option[String] = {
+  def readLine: String = {
     try {
-      Some(in.readLine)
+      if(!connected) connect;
+      getInputStream.readLine
     } catch {
-      case x => {
-        x.printStackTrace
-        None
-      }
+      case x => throw new RuntimeException(x)
     }
   }
 }
