@@ -58,8 +58,11 @@ abstract class RedisCluster(hosts: String*) extends Redis
   // not needed at cluster level
   val host = null
   val port = 0
+
+  // abstract val
   val keyTag: Option[KeyTag]
 
+  // default in libmemcached
   val POINTS_PER_SERVER = 160 // default in libmemcached
 
   // instantiating a cluster will automatically connect participating nodes to the server

@@ -50,10 +50,9 @@ private [redis] trait C {
 
 private [redis] trait Reply {
 
-  def readLine: Option[String]
+  def readLine: String
   def receive: Option[Any] = readLine match {
-    case None => None
-    case Some(line) =>
+    case line =>
       line.toList match {
         case INT :: s => integerReply(s.mkString)
         case SINGLE :: s => singleLineReply(s.mkString)
@@ -73,7 +72,7 @@ private [redis] trait Reply {
   private def bulkReply(str: String) = {
     Integer.parseInt(str) match {
       case -1 => None
-      case l => Some(readLine.get)
+      case l => Some(readLine)
     }
   }
 
@@ -84,9 +83,9 @@ private [redis] trait Reply {
         var l = List[Option[String]]()
         (1 to n).foreach {i =>
           receive match {
-            case Some(s: String) =>
-              l = l ::: List(Some(s))
-            case _ => 
+            case Some(s) =>
+              l = l ::: List(Some(s.toString))
+            case None => 
               l = l ::: List(None) // is required to handle nil elements in multi-bulk reply
           }
         }
