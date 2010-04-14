@@ -28,7 +28,9 @@ trait IO {
              new InputStreamReader(getSocket.getInputStream))
       true
     } catch {
-      case _ => clearFd; false;
+      case x => 
+        clearFd
+        throw new RuntimeException(x)
     }
   }
   
@@ -41,7 +43,8 @@ trait IO {
       clearFd
       true
     } catch {
-      case _ => false
+      case x => 
+        false
     }
   }
   
@@ -62,7 +65,8 @@ trait IO {
         try {
           getSocket.write(data.getBytes)
         } catch {
-          case _ => reconnect;
+          case x => 
+            reconnect;
         }
     }
   }

@@ -52,6 +52,7 @@ private [redis] trait Reply {
 
   def readLine: String
   def receive: Option[Any] = readLine match {
+    case null => None
     case line =>
       line.toList match {
         case INT :: s => integerReply(s.mkString)
