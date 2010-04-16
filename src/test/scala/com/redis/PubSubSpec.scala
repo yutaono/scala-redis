@@ -17,16 +17,9 @@ class PubSubSpec extends Spec
   val r = new RedisClient("localhost", 6379)
   val t = new RedisClient("localhost", 6379)
 
-  override def beforeEach = {
-  }
-
-  override def afterEach = {
-    // r.flushdb
-  }
-
   override def afterAll = {
-    r.disconnect
-    t.disconnect
+    // r.disconnect
+    // t.disconnect
   }
 
   /**
@@ -46,22 +39,26 @@ class PubSubSpec extends Spec
           case U(channel, no) => println("unsubscribed from " + channel + " and count = " + no)
           case M(channel, msg) => 
             msg match {
+              // exit will unsubscribe from all channels and stop subscription service
               case "exit" => 
                 println("unsubscribe all ..")
                 r.unsubscribe
 
+              // message "+x" will subscribe to channel x
               case x if x startsWith "+" => 
                 val s: Seq[Char] = x
                 s match {
                   case Seq('+', rest @ _*) => r.subscribe(rest.toString){ m => }
                 }
 
+              // message "-x" will unsubscribe from channel x
               case x if x startsWith "-" => 
                 val s: Seq[Char] = x
                 s match {
                   case Seq('-', rest @ _*) => r.unsubscribe(rest.toString)
                 }
 
+              // other message receive
               case x => 
                 println("received message on channel " + channel + " as : " + x)
             }
