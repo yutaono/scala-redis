@@ -23,6 +23,7 @@ trait IO {
   def connect: Boolean = {
     try {
       socket = new Socket(host, port)
+      socket.setKeepAlive(true)
       out = getSocket.getOutputStream
       in = new BufferedReader(
              new InputStreamReader(getSocket.getInputStream))

@@ -51,16 +51,17 @@ private [redis] trait C {
 private [redis] trait Reply {
 
   def readLine: String
+  def reconnect: Boolean
   def receive: Option[Any] = readLine match {
-    case null => None
+    case null => reconnect; None
     case line =>
       line.toList match {
         case INT :: s => integerReply(s.mkString)
         case SINGLE :: s => singleLineReply(s.mkString)
         case BULK :: s => bulkReply(s.mkString)
         case MULTI :: s => multiBulkReply(s.mkString)
-        case ERR :: s => throw new Exception(s.mkString)
-        case x => throw new Exception("Protocol error: Got " + x + " as initial reply byte")
+        case ERR :: s => reconnect; throw new Exception(s.mkString)
+        case x => reconnect; throw new Exception("Protocol error: Got " + x + " as initial reply byte")
       }
   }
 
