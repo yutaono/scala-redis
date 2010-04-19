@@ -111,4 +111,15 @@ class OperationsSpec extends Spec
       r.expire("anshin-3", 1000) should equal(false)
     }
   }
+
+  /**
+  describe("expire and handle server side disconnect") {
+    it ("should reconnect and run") {
+      r.set("anshin-1", "debasish")
+      r.expire("anshin-1", 30) should equal(true)
+      Thread.sleep(10 * 60 * 1000)
+      println(r.get("anshin-1"))
+    }
+  }
+  **/
 }
