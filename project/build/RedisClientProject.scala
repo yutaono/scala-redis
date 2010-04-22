@@ -1,8 +1,12 @@
 import sbt._
+import sbt.CompileOrder._
 
 class RedisClientProject(info: ProjectInfo) extends DefaultProject(info) 
 {
-  override def useDefaultConfigurations = true
+  // override def useDefaultConfigurations = true
+  override def compileOptions = super.compileOptions ++
+    Seq("-deprecation", "-Xcheckinit", "-Xstrict-warnings", "-Xwarninit", "-encoding", "utf8").map(x => CompileOption(x))
+
 
   val scalaToolsSnapshots = "Scala-Tools Maven2 Snapshots Repository" at "http://scala-tools.org/repo-snapshots"
   val scalaToolsReleases = "Scala-Tools Maven2 Releases Repository" at "http://scala-tools.org/repo-releases"

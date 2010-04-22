@@ -66,8 +66,8 @@ abstract class RedisCluster(hosts: String*) extends Redis
   val POINTS_PER_SERVER = 160 // default in libmemcached
 
   // instantiating a cluster will automatically connect participating nodes to the server
-  val clients = hosts.toList.map {host => 
-    val hp = host.split(":")
+  val clients = hosts.toList.map {h => 
+    val hp = h.split(":")
     new RedisClient(hp(0), hp(1).toInt)
   }
 
