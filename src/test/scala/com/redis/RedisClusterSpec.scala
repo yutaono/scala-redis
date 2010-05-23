@@ -57,7 +57,7 @@ class RedisClusterSpec extends Spec
 
       r.get("debasish").get should equal("debasish is working in anshin")
       r.get("maulindu").get should equal("maulindu is working in anshin")
-      l.map(r.get(_).get).removeDuplicates.size should equal(5)
+      l.map(r.get(_).get).distinct.size should equal(5)
     }
 
     it("should do all operations on the cluster") {
