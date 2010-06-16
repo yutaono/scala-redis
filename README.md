@@ -34,6 +34,8 @@ Start your redis instance (usually redis-server will do it)
 
 And you are ready to start issuing commands to the server(s)
 
+Redis 2 implemnets a new protocol for binary safe commands and replies
+
 let's connect and get a key:
 
     scala> import com.redis._
