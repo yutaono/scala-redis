@@ -83,7 +83,9 @@ class StringOperationsSpec extends Spec
     }
     it("should reset to 0 and then increment by 1 for a key that contains a diff type") {
       r.set("anshin-2", "debasish") should equal(true)
-      r.incr("anshin-2") should equal(Some(1))
+      try {
+        r.incr("anshin-2")
+      } catch { case ex => ex.getMessage should equal("ERR value is not an integer") }
     }
     it("should increment by 5 for a key that contains a number") {
       r.set("anshin-3", "10") should equal(true)
@@ -91,7 +93,9 @@ class StringOperationsSpec extends Spec
     }
     it("should reset to 0 and then increment by 5 for a key that contains a diff type") {
       r.set("anshin-4", "debasish") should equal(true)
-      r.incrby("anshin-4", 5) should equal(Some(5))
+      try {
+        r.incrby("anshin-4", 5)
+      } catch { case ex => ex.getMessage should equal("ERR value is not an integer") }
     }
   }
 
@@ -102,7 +106,9 @@ class StringOperationsSpec extends Spec
     }
     it("should reset to 0 and then decrement by 1 for a key that contains a diff type") {
       r.set("anshin-2", "debasish") should equal(true)
-      r.decr("anshin-2") should equal(Some(-1))
+      try {
+        r.decr("anshin-2")
+      } catch { case ex => ex.getMessage should equal("ERR value is not an integer") }
     }
     it("should decrement by 5 for a key that contains a number") {
       r.set("anshin-3", "10") should equal(true)
@@ -110,7 +116,9 @@ class StringOperationsSpec extends Spec
     }
     it("should reset to 0 and then decrement by 5 for a key that contains a diff type") {
       r.set("anshin-4", "debasish") should equal(true)
-      r.decrby("anshin-4", 5) should equal(Some(-5))
+      try {
+        r.decrby("anshin-4", 5)
+      } catch { case ex => ex.getMessage should equal("ERR value is not an integer") }
     }
   }
 

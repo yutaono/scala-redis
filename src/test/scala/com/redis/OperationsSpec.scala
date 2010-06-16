@@ -32,7 +32,7 @@ class OperationsSpec extends Spec
       r.set("anshin-1", "debasish")
       r.set("anshin-2", "maulindu")
       r.keys("anshin*") match {
-        case Some(s: Array[String]) => s.size should equal(2)
+        case Some(s: List[Option[String]]) => s.size should equal(2)
         case None => fail("should have 2 elements")
       }
     }

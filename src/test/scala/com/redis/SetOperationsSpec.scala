@@ -154,7 +154,7 @@ class SetOperationsSpec extends Spec
       r.sadd("set-1", "foo").get should equal(1)
       r.sadd("set-1", "bar").get should equal(1)
       r.sadd("set-1", "baz").get should equal(1)
-      r.sinter("set-1", "set-4") should equal(None) // doc says it should be empty set
+      r.sinter("set-1", "set-4") should equal(Some(Set())) 
     }
   }
 
@@ -271,7 +271,7 @@ class SetOperationsSpec extends Spec
       r.smembers("set-1").get should equal(Set(Some("foo"), Some("bar"), Some("baz")))
     }
     it("should return None for an empty set") {
-      r.smembers("set-1") should equal(None)
+      r.smembers("set-1") should equal(Some(Set()))
     }
   }
 

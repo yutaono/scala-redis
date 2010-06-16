@@ -4,12 +4,9 @@ trait Operations { self: Redis =>
 
   // KEYS
   // returns all the keys matching the glob-style pattern.
-  def keys(pattern: String): Option[Array[String]] = {
+  def keys(pattern: String): Option[List[Option[String]]] = {
     send("KEYS", pattern)
-    asString match {
-      case Some(s) if s.size > 0 => Some(s split " ")
-      case _ => None
-    }
+    asList
   }
 
   // RANDKEY

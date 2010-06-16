@@ -93,7 +93,7 @@ abstract class RedisCluster(hosts: String*) extends Redis
     val rs = hr.cluster.toList
     for(r <- rs;
         val ks = r.keys(glob) if ks.isDefined)
-      yield ks.get.toList
+      yield ks.get 
   }
 
   /**
@@ -101,9 +101,9 @@ abstract class RedisCluster(hosts: String*) extends Redis
    */
   override def keys(glob: String) = nodeKeys(glob) match {
     case List() => None
-    case l => l.flatten[String] match {
+    case l => l.flatten[Option[String]] match {
       case List() => None
-      case ks: List[String] => Some(ks.toArray)
+      case ks: List[Option[String]] => Some(ks)  
     }
   }
 
