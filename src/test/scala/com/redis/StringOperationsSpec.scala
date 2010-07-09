@@ -172,4 +172,14 @@ class StringOperationsSpec extends Spec
       r.get("test key with spaces").get should equal("I am a value with spaces")
     }
   }
+
+  describe("get with newline values") {
+    it("should retrieve key/value pairs for existing keys") {
+      r.set("anshin-x", "debasish\nghosh\nfather") should equal(true)
+      r.get("anshin-x") match {
+        case Some(s: String) => s should equal("debasish\nghosh\nfather")
+        case None => fail("should return debasish")
+      }
+    }
+  }
 }

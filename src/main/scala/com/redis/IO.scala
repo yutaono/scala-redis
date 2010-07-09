@@ -80,4 +80,15 @@ trait IO {
       case x => throw new RuntimeException(x)
     }
   }
+
+  def readCounted(count: Int): String = {
+    try {
+      if(!connected) connect;
+      val car = new Array[Char](count)
+      getInputStream.read(car, 0, count)
+      car.mkString
+    } catch {
+      case x => throw new RuntimeException(x)
+    }
+  }
 }
