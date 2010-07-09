@@ -28,9 +28,18 @@ class OperationsSpec extends Spec
   }
 
   describe("keys") {
-    it("should match foo") {
+    it("should fetch keys") {
       r.set("anshin-1", "debasish")
       r.set("anshin-2", "maulindu")
+      r.keys("anshin*") match {
+        case Some(s: List[Option[String]]) => s.size should equal(2)
+        case None => fail("should have 2 elements")
+      }
+    }
+
+    it("should fetch keys with spaces") {
+      r.set("anshin 1", "debasish")
+      r.set("anshin 2", "maulindu")
       r.keys("anshin*") match {
         case Some(s: List[Option[String]]) => s.size should equal(2)
         case None => fail("should have 2 elements")

@@ -42,7 +42,7 @@ trait SortedSetOperations { self: Redis =>
   import Commands._
   import RedisClient._
 
-  def zrange(key: String, start: String, end: String, sortAs: SortOrder, withScores: Boolean ): Option[List[Option[String]]] = {
+  def zrange(key: String, start: String, end: String, sortAs: SortOrder = ASC, withScores: Boolean = false ): Option[List[Option[String]]] = {
     val sort =
       sortAs match {
         case ASC => "ZRANGE"
@@ -57,7 +57,7 @@ trait SortedSetOperations { self: Redis =>
     asList
   }
 
-  def zrangeWithScore(key: String, start: String, end: String, sortAs: SortOrder): Option[List[(Option[String], Option[String])]] = {
+  def zrangeWithScore(key: String, start: String, end: String, sortAs: SortOrder = ASC): Option[List[(Option[String], Option[String])]] = {
     zrange(key, start, end, sortAs, true) match {
       case None => None
       case Some(l) => Some(makeTuple(l))
@@ -78,5 +78,44 @@ trait SortedSetOperations { self: Redis =>
     case Some(l) =>
       send("ZRANGEBYSCORE", key, min, max, "LIMIT", l._1, l._2)
       asList
+  }
+
+  // ZRANK
+  // ZREVRANK
+  //
+  def zrank(key: String, member: String, reverse: Boolean = false) = reverse match {
+    case false =>
+      send("ZRANK", key, member)
+      asInt
+    case _ =>
+      send("ZREVRANK", key, member)
+      asInt
+  }
+
+  // ZREMRANGEBYRANK
+  //
+  def zremrangebyrank(key: String, start: Int, end: Int) = {
+    send("ZREMRANGEBYRANK", key, String.valueOf(start), String.valueOf(end))
+    asInt
+  }
+
+  // ZREMRANGEBYSCORE
+  //
+  def zremrangebyscore(key: String, start: Int, end: Int) = {
+    send("ZREMRANGEBYSCORE", key, String.valueOf(start), String.valueOf(end))
+    asInt
+  }
+
+  // ZUNION
+  //
+  def zunion(dstKey: String, noOfKeys: Int, keys: List[String], weights: List[Int] = List[Int]()) = weights match {
+    case List() =>
+      send("ZUNIONSTORE", dstKey, (String.valueOf(noOfKeys) :: keys):_*)
+      asInt
+    case _ =>
+      send("ZUNIONSTORE", 
+        dstKey, 
+        ((String.valueOf(noOfKeys) :: keys) ::: ("WEIGHTS" :: weights.map(String.valueOf(_)))):_*)
+      asInt
   }
 }
