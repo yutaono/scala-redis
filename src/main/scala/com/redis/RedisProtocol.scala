@@ -51,6 +51,7 @@ private [redis] trait C {
 private [redis] trait Reply {
 
   def readLine: String
+  def readCounted(c: Int): String
   def reconnect: Boolean
   def receive: Option[Any] = readLine match {
     case null => reconnect; None
@@ -74,7 +75,11 @@ private [redis] trait Reply {
   private def bulkReply(str: String) = {
     Integer.parseInt(str) match {
       case -1 => None
-      case l => Some(readLine)
+      case l => {
+        val str = readCounted(l)
+        val ignore = readLine // trailing newline
+        Some(str)
+      }
     }
   }
 
