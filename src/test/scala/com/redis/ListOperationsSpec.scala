@@ -271,6 +271,15 @@ class ListOperationsSpec extends Spec
     }
   }
 
+  describe("lpush with newlines in strings") {
+    it("should add to the head of the list") {
+      r.lpush("list-1", "foo\nbar\nbaz") should equal(true)
+      r.lpush("list-1", "bar\nfoo\nbaz") should equal(true)
+      r.lpop("list-1") should equal(Some("bar\nfoo\nbaz"))
+      r.lpop("list-1") should equal(Some("foo\nbar\nbaz"))
+    }
+  }
+
   /**
   describe("blpop") {
     it ("should do") {
