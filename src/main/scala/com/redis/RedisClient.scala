@@ -33,6 +33,7 @@ class RedisClient(override val host: String, override val port: Int)
   with ListOperations
   with SetOperations
   with SortedSetOperations
+  with HashOperations
   with PubSub {
 
   connect
