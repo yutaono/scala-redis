@@ -39,14 +39,14 @@ private [redis] case class InlineCommand(command: String) extends Command(comman
 }
 
 private [redis] trait C {
-  def snd(command: String, key: String, values: String*)(to: String => Unit) = {
+  def snd(command: String, key: String, values: String*)(to: String => Unit) =
     to(MultiBulkCommand(command, key, values:_*).toString)
-  }
 
-  def snd(command: String)(to: String => Unit) = {
+  def snd(command: String)(to: String => Unit) = 
     to(InlineCommand(command).toString)
-  }
 }
+
+case class RedisConnectionException(message: String) extends RuntimeException(message)
 
 private [redis] trait Reply {
 
@@ -54,7 +54,10 @@ private [redis] trait Reply {
   def readCounted(c: Int): String
   def reconnect: Boolean
   def receive: Option[Any] = readLine match {
-    case null => reconnect; None
+    case null => {
+      // reconnect     // ; receive None
+      throw new RedisConnectionException("Connection dropped ..")
+    }
     case line =>
       line.toList match {
         case INT :: s => integerReply(s.mkString)

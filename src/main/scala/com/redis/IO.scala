@@ -12,21 +12,22 @@ trait IO {
   var in: BufferedReader = null
   var db: Int = 0
 
-  def getOutputStream = out
-  def getInputStream = in
-  def getSocket = socket
-
-  def connected = { getSocket != null }
-  def reconnect = { disconnect && connect }
+  def connected = { 
+    socket != null 
+  }
+  def reconnect = { 
+    disconnect && connect 
+  }
 
   // Connects the socket, and sets the input and output streams.
   def connect: Boolean = {
     try {
       socket = new Socket(host, port)
+      socket.setSoTimeout(0)
       socket.setKeepAlive(true)
-      out = getSocket.getOutputStream
+      out = socket.getOutputStream
       in = new BufferedReader(
-             new InputStreamReader(getSocket.getInputStream))
+             new InputStreamReader(socket.getInputStream))
       true
     } catch {
       case x => 
@@ -55,29 +56,31 @@ trait IO {
     in = null
   }
 
-   // Wraper for the socket write operation.
-  def write_to_socket(data: String)(op: OutputStream => Unit) = op(getOutputStream)
+   // Wrapper for the socket write operation.
+  def write_to_socket(data: String)(op: OutputStream => Unit) = op(out)
   
   // Writes data to a socket using the specified block.
   def write(data: String) = {
     if(!connected) connect;
-    write_to_socket(data){
-      getSocket =>
-        try {
-          getSocket.write(data.getBytes)
-        } catch {
-          case x => 
-            reconnect;
-        }
+    write_to_socket(data){ os =>
+      try {
+        os.write(data.getBytes)
+        os.flush
+      } catch {
+        case x => 
+          reconnect;
+      }
     }
   }
 
   def readLine: String = {
     try {
       if(!connected) connect;
-      getInputStream.readLine
+      in.readLine
     } catch {
-      case x => throw new RuntimeException(x)
+      case x => {
+        throw new RuntimeException(x)
+      }
     }
   }
 
@@ -85,7 +88,7 @@ trait IO {
     try {
       if(!connected) connect;
       val car = new Array[Char](count)
-      getInputStream.read(car, 0, count)
+      in.read(car, 0, count)
       car.mkString
     } catch {
       case x => throw new RuntimeException(x)
