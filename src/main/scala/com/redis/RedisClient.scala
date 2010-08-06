@@ -7,26 +7,13 @@ object RedisClient {
 }
 
 trait Redis extends IO with Protocol {
-
-  def send(command: String, key: String, values: String*) = {
-    snd(command, key, values:_*) { write }
-  }
-
-  def send(command: String) = {
-    snd(command) { write }
-  }
-
-  def cmd(command: String, key: String, values: String*) = {
-    MultiBulkCommand(command, key, values:_*).toString
-  }
-
-  def cmd(command: String) = {
-    InlineCommand(command).toString
-  }
+  def send(command: String, key: String, values: String*) = snd(command, key, values:_*) { write }
+  def send(command: String) = snd(command) { write }
+  def cmd(command: String, key: String, values: String*) = MultiBulkCommand(command, key, values:_*).toString
+  def cmd(command: String) = InlineCommand(command).toString
 }
 
-class RedisClient(override val host: String, override val port: Int)
-  extends Redis
+trait RedisCommand extends Redis
   with Operations 
   with NodeOperations 
   with StringOperations
@@ -34,10 +21,22 @@ class RedisClient(override val host: String, override val port: Int)
   with SetOperations
   with SortedSetOperations
   with HashOperations
+  
+
+class RedisClient(override val host: String, override val port: Int)
+  extends RedisCommand 
   with PubSub {
 
   connect
 
   def this() = this("localhost", 6379)
   override def toString = host + ":" + String.valueOf(port)
+
+  def pipeline(f: => Unit): Option[List[Option[_]]] = {
+    send("MULTI")
+    val ok = as[String] // flush reply stream
+    f
+    send("EXEC")
+    as[List[Option[_]]]
+  }
 }

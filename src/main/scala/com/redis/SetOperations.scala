@@ -6,35 +6,35 @@ trait SetOperations { self: Redis =>
   // Add the specified member to the set value stored at key.
   def sadd(key: String, value: String): Option[Int] = {
     send("SADD", key, value)
-    asInt
+    as[Int]
   }
 
   // SREM
   // Remove the specified member from the set value stored at key.
   def srem(key: String, value: String): Option[Int] = {
     send("SREM", key, value)
-    asInt
+    as[Int]
   }
 
   // SPOP
   // Remove and return (pop) a random element from the Set value at key.
   def spop(key: String): Option[String] = {
     send("SPOP", key)
-    asString
+    as[String]
   }
 
   // SMOVE
   // Move the specified member from one Set to another atomically.
   def smove(sourceKey: String, destKey: String, value: String): Option[Int] = {
     send("SMOVE", sourceKey, destKey, value)
-    asInt
+    as[Int]
   }
 
   // SCARD
   // Return the number of elements (the cardinality) of the Set at key.
   def scard(key: String): Option[Int] = {
     send("SCARD", key)
-    asInt
+    as[Int]
   }
 
   // SISMEMBER
@@ -48,7 +48,7 @@ trait SetOperations { self: Redis =>
   // Return the intersection between the Sets stored at key1, key2, ..., keyN.
   def sinter(key: String, keys: String*): Option[Set[Option[String]]] = {
     send("SINTER", key, keys: _*)
-    asSet
+    as[Set[Option[String]]]((x: Iterable[Option[String]]) => Set(x.toSeq: _*))
   }
 
   // SINTERSTORE
@@ -58,14 +58,14 @@ trait SetOperations { self: Redis =>
   // refer http://code.google.com/p/redis/issues/detail?id=121
   def sinterstore(key: String, keys: String*): Option[Int] = {
     send("SINTERSTORE", key, keys: _*)
-    asInt
+    as[Int]
   }
 
   // SUNION
   // Return the union between the Sets stored at key1, key2, ..., keyN.
   def sunion(key: String, keys: String*): Option[Set[Option[String]]] = {
     send("SUNION", key, keys: _*)
-    asSet
+    as[Set[Option[String]]]((x: Iterable[Option[String]]) => Set(x.toSeq: _*))
   }
 
   // SUNIONSTORE
@@ -75,14 +75,14 @@ trait SetOperations { self: Redis =>
   // refer http://code.google.com/p/redis/issues/detail?id=121
   def sunionstore(key: String, keys: String*): Option[Int] = {
     send("SUNIONSTORE", key, keys: _*)
-    asInt
+    as[Int]
   }
 
   // SDIFF
   // Return the difference between the Set stored at key1 and all the Sets key2, ..., keyN.
   def sdiff(key: String, keys: String*): Option[Set[Option[String]]] = {
     send("SDIFF", key, keys: _*)
-    asSet
+    as[Set[Option[String]]]((x: Iterable[Option[String]]) => Set(x.toSeq: _*))
   }
 
   // SDIFFSTORE
@@ -90,20 +90,20 @@ trait SetOperations { self: Redis =>
   // and store the resulting Set at dstkey.
   def sdiffstore(key: String, keys: String*): Option[Int] = {
     send("SDIFFSTORE", key, keys: _*)
-    asInt
+    as[Int]
   }
 
   // SMEMBERS
   // Return all the members of the Set value at key.
   def smembers(key: String): Option[Set[Option[String]]] = {
     send("SMEMBERS", key)
-    asSet
+    as[Set[Option[String]]]((x: Iterable[Option[String]]) => Set(x.toSeq: _*))
   }
 
   // SRANDMEMBER
   // Return a random element from a Set
   def srandmember(key: String): Option[String] = {
     send("SRANDMEMBER", key)
-    asString
+    as[String]
   }
 }

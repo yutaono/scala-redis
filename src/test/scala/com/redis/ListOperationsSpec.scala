@@ -29,8 +29,8 @@ class ListOperationsSpec extends Spec
 
   describe("lpush") {
     it("should add to the head of the list") {
-      r.lpush("list-1", "foo") should equal(true)
-      r.lpush("list-1", "bar") should equal(true)
+      r.lpush("list-1", "foo") should equal(Some(1))
+      r.lpush("list-1", "bar") should equal(Some(2))
     }
     it("should throw if the key has a non-list value") {
       r.set("anshin-1", "debasish") should equal(true)
@@ -41,8 +41,8 @@ class ListOperationsSpec extends Spec
 
   describe("rpush") {
     it("should add to the head of the list") {
-      r.rpush("list-1", "foo") should equal(true)
-      r.rpush("list-1", "bar") should equal(true)
+      r.rpush("list-1", "foo") should equal(Some(1))
+      r.rpush("list-1", "bar") should equal(Some(2))
     }
     it("should throw if the key has a non-list value") {
       r.set("anshin-1", "debasish") should equal(true)
@@ -53,8 +53,8 @@ class ListOperationsSpec extends Spec
 
   describe("llen") {
     it("should return the length of the list") {
-      r.lpush("list-1", "foo") should equal(true)
-      r.lpush("list-1", "bar") should equal(true)
+      r.lpush("list-1", "foo") should equal(Some(1))
+      r.lpush("list-1", "bar") should equal(Some(2))
       r.llen("list-1").get should equal(2)
     }
     it("should return 0 for a non-existent key") {
@@ -69,51 +69,51 @@ class ListOperationsSpec extends Spec
 
   describe("lrange") {
     it("should return the range") {
-      r.lpush("list-1", "6") should equal(true)
-      r.lpush("list-1", "5") should equal(true)
-      r.lpush("list-1", "4") should equal(true)
-      r.lpush("list-1", "3") should equal(true)
-      r.lpush("list-1", "2") should equal(true)
-      r.lpush("list-1", "1") should equal(true)
+      r.lpush("list-1", "6") should equal(Some(1))
+      r.lpush("list-1", "5") should equal(Some(2))
+      r.lpush("list-1", "4") should equal(Some(3))
+      r.lpush("list-1", "3") should equal(Some(4))
+      r.lpush("list-1", "2") should equal(Some(5))
+      r.lpush("list-1", "1") should equal(Some(6))
       r.llen("list-1").get should equal(6)
       r.lrange("list-1", 0, 4).get should equal(List(Some("1"), Some("2"), Some("3"), Some("4"), Some("5")))
     }
     it("should return empty list if start > end") {
-      r.lpush("list-1", "3") should equal(true)
-      r.lpush("list-1", "2") should equal(true)
-      r.lpush("list-1", "1") should equal(true)
+      r.lpush("list-1", "3") should equal(Some(1))
+      r.lpush("list-1", "2") should equal(Some(2))
+      r.lpush("list-1", "1") should equal(Some(3))
       r.lrange("list-1", 2, 0).get should equal(List())
     }
     it("should treat as end of list if end is over the actual end of list") {
-      r.lpush("list-1", "3") should equal(true)
-      r.lpush("list-1", "2") should equal(true)
-      r.lpush("list-1", "1") should equal(true)
+      r.lpush("list-1", "3") should equal(Some(1))
+      r.lpush("list-1", "2") should equal(Some(2))
+      r.lpush("list-1", "1") should equal(Some(3))
       r.lrange("list-1", 0, 7).get should equal(List(Some("1"), Some("2"), Some("3")))
     }
   }
 
   describe("ltrim") {
     it("should trim to the input size") {
-      r.lpush("list-1", "6") should equal(true)
-      r.lpush("list-1", "5") should equal(true)
-      r.lpush("list-1", "4") should equal(true)
-      r.lpush("list-1", "3") should equal(true)
-      r.lpush("list-1", "2") should equal(true)
-      r.lpush("list-1", "1") should equal(true)
+      r.lpush("list-1", "6") should equal(Some(1))
+      r.lpush("list-1", "5") should equal(Some(2))
+      r.lpush("list-1", "4") should equal(Some(3))
+      r.lpush("list-1", "3") should equal(Some(4))
+      r.lpush("list-1", "2") should equal(Some(5))
+      r.lpush("list-1", "1") should equal(Some(6))
       r.ltrim("list-1", 0, 3) should equal(true)
       r.llen("list-1") should equal(Some(4))
     }
     it("should should return empty list for start > end") {
-      r.lpush("list-1", "6") should equal(true)
-      r.lpush("list-1", "5") should equal(true)
-      r.lpush("list-1", "4") should equal(true)
+      r.lpush("list-1", "6") should equal(Some(1))
+      r.lpush("list-1", "5") should equal(Some(2))
+      r.lpush("list-1", "4") should equal(Some(3))
       r.ltrim("list-1", 6, 3) should equal(true)
       r.llen("list-1") should equal(Some(0))
     }
     it("should treat as end of list if end is over the actual end of list") {
-      r.lpush("list-1", "6") should equal(true)
-      r.lpush("list-1", "5") should equal(true)
-      r.lpush("list-1", "4") should equal(true)
+      r.lpush("list-1", "6") should equal(Some(1))
+      r.lpush("list-1", "5") should equal(Some(2))
+      r.lpush("list-1", "4") should equal(Some(3))
       r.ltrim("list-1", 0, 12) should equal(true)
       r.llen("list-1") should equal(Some(3))
     }
@@ -121,12 +121,12 @@ class ListOperationsSpec extends Spec
 
   describe("lindex") {
     it("should return the value at index") {
-      r.lpush("list-1", "6") should equal(true)
-      r.lpush("list-1", "5") should equal(true)
-      r.lpush("list-1", "4") should equal(true)
-      r.lpush("list-1", "3") should equal(true)
-      r.lpush("list-1", "2") should equal(true)
-      r.lpush("list-1", "1") should equal(true)
+      r.lpush("list-1", "6") should equal(Some(1))
+      r.lpush("list-1", "5") should equal(Some(2))
+      r.lpush("list-1", "4") should equal(Some(3))
+      r.lpush("list-1", "3") should equal(Some(4))
+      r.lpush("list-1", "2") should equal(Some(5))
+      r.lpush("list-1", "1") should equal(Some(6))
       r.lindex("list-1", 2) should equal(Some("3"))
       r.lindex("list-1", 3) should equal(Some("4"))
       r.lindex("list-1", -1) should equal(Some("6"))
@@ -136,28 +136,28 @@ class ListOperationsSpec extends Spec
       r.lindex("list-1", 0) should equal(None)
     }
     it("should return empty string for an index out of range") {
-      r.lpush("list-1", "6") should equal(true)
-      r.lpush("list-1", "5") should equal(true)
-      r.lpush("list-1", "4") should equal(true)
+      r.lpush("list-1", "6") should equal(Some(1))
+      r.lpush("list-1", "5") should equal(Some(2))
+      r.lpush("list-1", "4") should equal(Some(3))
       r.lindex("list-1", 8) should equal(None) // the protocol says it will return empty string
     }
   }
 
   describe("lset") {
     it("should set value for key at index") {
-      r.lpush("list-1", "6") should equal(true)
-      r.lpush("list-1", "5") should equal(true)
-      r.lpush("list-1", "4") should equal(true)
-      r.lpush("list-1", "3") should equal(true)
-      r.lpush("list-1", "2") should equal(true)
-      r.lpush("list-1", "1") should equal(true)
+      r.lpush("list-1", "6") should equal(Some(1))
+      r.lpush("list-1", "5") should equal(Some(2))
+      r.lpush("list-1", "4") should equal(Some(3))
+      r.lpush("list-1", "3") should equal(Some(4))
+      r.lpush("list-1", "2") should equal(Some(5))
+      r.lpush("list-1", "1") should equal(Some(6))
       r.lset("list-1", 2, "30") should equal(true)
       r.lindex("list-1", 2) should equal(Some("30"))
     }
     it("should generate error for out of range index") {
-      r.lpush("list-1", "6") should equal(true)
-      r.lpush("list-1", "5") should equal(true)
-      r.lpush("list-1", "4") should equal(true)
+      r.lpush("list-1", "6") should equal(Some(1))
+      r.lpush("list-1", "5") should equal(Some(2))
+      r.lpush("list-1", "4") should equal(Some(3))
       val thrown = evaluating { r.lset("list-1", 12, "30") } should produce [Exception]
       thrown.getMessage should equal("ERR index out of range")
     }
@@ -165,32 +165,32 @@ class ListOperationsSpec extends Spec
 
   describe("lrem") {
     it("should remove count elements matching value from beginning") {
-      r.lpush("list-1", "6") should equal(true)
-      r.lpush("list-1", "hello") should equal(true)
-      r.lpush("list-1", "4") should equal(true)
-      r.lpush("list-1", "hello") should equal(true)
-      r.lpush("list-1", "hello") should equal(true)
-      r.lpush("list-1", "hello") should equal(true)
+      r.lpush("list-1", "6") should equal(Some(1))
+      r.lpush("list-1", "hello") should equal(Some(2))
+      r.lpush("list-1", "4") should equal(Some(3))
+      r.lpush("list-1", "hello") should equal(Some(4))
+      r.lpush("list-1", "hello") should equal(Some(5))
+      r.lpush("list-1", "hello") should equal(Some(6))
       r.lrem("list-1", 2, "hello") should equal(Some(2))
       r.llen("list-1") should equal(Some(4))
     }
     it("should remove all elements matching value from beginning") {
-      r.lpush("list-1", "6") should equal(true)
-      r.lpush("list-1", "hello") should equal(true)
-      r.lpush("list-1", "4") should equal(true)
-      r.lpush("list-1", "hello") should equal(true)
-      r.lpush("list-1", "hello") should equal(true)
-      r.lpush("list-1", "hello") should equal(true)
+      r.lpush("list-1", "6") should equal(Some(1))
+      r.lpush("list-1", "hello") should equal(Some(2))
+      r.lpush("list-1", "4") should equal(Some(3))
+      r.lpush("list-1", "hello") should equal(Some(4))
+      r.lpush("list-1", "hello") should equal(Some(5))
+      r.lpush("list-1", "hello") should equal(Some(6))
       r.lrem("list-1", 0, "hello") should equal(Some(4))
       r.llen("list-1") should equal(Some(2))
     }
     it("should remove count elements matching value from end") {
-      r.lpush("list-1", "6") should equal(true)
-      r.lpush("list-1", "hello") should equal(true)
-      r.lpush("list-1", "4") should equal(true)
-      r.lpush("list-1", "hello") should equal(true)
-      r.lpush("list-1", "hello") should equal(true)
-      r.lpush("list-1", "hello") should equal(true)
+      r.lpush("list-1", "6") should equal(Some(1))
+      r.lpush("list-1", "hello") should equal(Some(2))
+      r.lpush("list-1", "4") should equal(Some(3))
+      r.lpush("list-1", "hello") should equal(Some(4))
+      r.lpush("list-1", "hello") should equal(Some(5))
+      r.lpush("list-1", "hello") should equal(Some(6))
       r.lrem("list-1", -2, "hello") should equal(Some(2))
       r.llen("list-1") should equal(Some(4))
       r.lindex("list-1", -2) should equal(Some("4"))
@@ -199,20 +199,20 @@ class ListOperationsSpec extends Spec
 
   describe("lpop") {
     it("should pop the first one from head") {
-      r.lpush("list-1", "6") should equal(true)
-      r.lpush("list-1", "5") should equal(true)
-      r.lpush("list-1", "4") should equal(true)
-      r.lpush("list-1", "3") should equal(true)
-      r.lpush("list-1", "2") should equal(true)
-      r.lpush("list-1", "1") should equal(true)
+      r.lpush("list-1", "6") should equal(Some(1))
+      r.lpush("list-1", "5") should equal(Some(2))
+      r.lpush("list-1", "4") should equal(Some(3))
+      r.lpush("list-1", "3") should equal(Some(4))
+      r.lpush("list-1", "2") should equal(Some(5))
+      r.lpush("list-1", "1") should equal(Some(6))
       r.lpop("list-1") should equal(Some("1"))
       r.lpop("list-1") should equal(Some("2"))
       r.lpop("list-1") should equal(Some("3"))
       r.llen("list-1") should equal(Some(3))
     }
     it("should give nil for non-existent key") {
-      r.lpush("list-1", "6") should equal(true)
-      r.lpush("list-1", "5") should equal(true)
+      r.lpush("list-1", "6") should equal(Some(1))
+      r.lpush("list-1", "5") should equal(Some(2))
       r.lpop("list-2") should equal(None)
       r.llen("list-1") should equal(Some(2))
     }
@@ -220,20 +220,20 @@ class ListOperationsSpec extends Spec
 
   describe("rpop") {
     it("should pop the first one from tail") {
-      r.lpush("list-1", "6") should equal(true)
-      r.lpush("list-1", "5") should equal(true)
-      r.lpush("list-1", "4") should equal(true)
-      r.lpush("list-1", "3") should equal(true)
-      r.lpush("list-1", "2") should equal(true)
-      r.lpush("list-1", "1") should equal(true)
+      r.lpush("list-1", "6") should equal(Some(1))
+      r.lpush("list-1", "5") should equal(Some(2))
+      r.lpush("list-1", "4") should equal(Some(3))
+      r.lpush("list-1", "3") should equal(Some(4))
+      r.lpush("list-1", "2") should equal(Some(5))
+      r.lpush("list-1", "1") should equal(Some(6))
       r.rpop("list-1") should equal(Some("6"))
       r.rpop("list-1") should equal(Some("5"))
       r.rpop("list-1") should equal(Some("4"))
       r.llen("list-1") should equal(Some(3))
     }
     it("should give nil for non-existent key") {
-      r.lpush("list-1", "6") should equal(true)
-      r.lpush("list-1", "5") should equal(true)
+      r.lpush("list-1", "6") should equal(Some(1))
+      r.lpush("list-1", "5") should equal(Some(2))
       r.rpop("list-2") should equal(None)
       r.llen("list-1") should equal(Some(2))
     }
@@ -241,12 +241,12 @@ class ListOperationsSpec extends Spec
 
   describe("rpoplpush") {
     it("should do") {
-      r.rpush("list-1", "a") should equal(true)
-      r.rpush("list-1", "b") should equal(true)
-      r.rpush("list-1", "c") should equal(true)
+      r.rpush("list-1", "a") should equal(Some(1))
+      r.rpush("list-1", "b") should equal(Some(2))
+      r.rpush("list-1", "c") should equal(Some(3))
 
-      r.rpush("list-2", "foo") should equal(true)
-      r.rpush("list-2", "bar") should equal(true)
+      r.rpush("list-2", "foo") should equal(Some(1))
+      r.rpush("list-2", "bar") should equal(Some(2))
       r.rpoplpush("list-1", "list-2") should equal(Some("c"))
       r.lindex("list-2", 0) should equal(Some("c"))
       r.llen("list-1") should equal(Some(2))
@@ -254,9 +254,9 @@ class ListOperationsSpec extends Spec
     }
 
     it("should rotate the list when src and dest are the same") {
-      r.rpush("list-1", "a") should equal(true)
-      r.rpush("list-1", "b") should equal(true)
-      r.rpush("list-1", "c") should equal(true)
+      r.rpush("list-1", "a") should equal(Some(1))
+      r.rpush("list-1", "b") should equal(Some(2))
+      r.rpush("list-1", "c") should equal(Some(3))
       r.rpoplpush("list-1", "list-1") should equal(Some("c"))
       r.lindex("list-1", 0) should equal(Some("c"))
       r.lindex("list-1", 2) should equal(Some("b"))
@@ -265,16 +265,16 @@ class ListOperationsSpec extends Spec
 
     it("should give None for non-existent key") {
       r.rpoplpush("list-1", "list-2") should equal(None)
-      r.rpush("list-1", "a") should equal(true)
-      r.rpush("list-1", "b") should equal(true)
+      r.rpush("list-1", "a") should equal(Some(1))
+      r.rpush("list-1", "b") should equal(Some(2))
       r.rpoplpush("list-1", "list-2") should equal(Some("b"))
     }
   }
 
   describe("lpush with newlines in strings") {
     it("should add to the head of the list") {
-      r.lpush("list-1", "foo\nbar\nbaz") should equal(true)
-      r.lpush("list-1", "bar\nfoo\nbaz") should equal(true)
+      r.lpush("list-1", "foo\nbar\nbaz") should equal(Some(1))
+      r.lpush("list-1", "bar\nfoo\nbaz") should equal(Some(2))
       r.lpop("list-1") should equal(Some("bar\nfoo\nbaz"))
       r.lpop("list-1") should equal(Some("foo\nbar\nbaz"))
     }

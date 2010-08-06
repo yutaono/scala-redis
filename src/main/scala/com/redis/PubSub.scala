@@ -31,7 +31,7 @@ trait PubSub { self: Redis =>
 
     def run {
       whileTrue {
-        asList match {
+        as[List[Option[String]]] match {
           case l @ Some(Some(msgType) :: Some(channel) :: Some(data) :: Nil) =>
             msgType match {
               case "subscribe" => fn(S(channel, data.toInt))

@@ -6,35 +6,35 @@ trait SortedSetOperations { self: Redis =>
   // Add the specified member having the specified score to the sorted set stored at key.
   def zadd(key: String, score: String, member: String): Option[Int] = {
     send("ZADD", key, score, member)
-    asInt
+    as[Int]
   }
   
   // ZREM
   // Remove the specified member from the sorted set value stored at key.
   def zrem(key: String, member: String): Option[Int] = {
     send("ZREM", key, member)
-    asInt
+    as[Int]
   }
   
   // ZINCRBY
   // 
   def zincrby(key: String, incr: String, member: String): Option[Int] = {
     send("ZINCRBY", key, incr, member)
-    asInt
+    as[Int]
   }
   
   // ZCARD
   // 
   def zcard(key: String): Option[Int] = {
     send("ZCARD", key)
-    asInt
+    as[Int]
   }
   
   // ZSCORE
   // 
   def zscore(key: String, element: String): Option[String] = {
     send("ZSCORE", key, element)
-    asString
+    as[String]
   }
   
   // ZRANGE
@@ -54,7 +54,7 @@ trait SortedSetOperations { self: Redis =>
         case _ => cmd(sort, key, start, end)
       }
     send(command)
-    asList
+    as[List[Option[String]]]
   }
 
   def zrangeWithScore(key: String, start: String, end: String, sortAs: SortOrder = ASC): Option[List[(Option[String], Option[String])]] = {
@@ -74,10 +74,10 @@ trait SortedSetOperations { self: Redis =>
   def zrangebyscore(key: String, min: String, max: String, limit: Option[(String, String)]): Option[List[Option[String]]] = limit match {
     case None =>
       send("ZRANGEBYSCORE", key, min, max)
-      asList
+      as[List[Option[String]]]
     case Some(l) =>
       send("ZRANGEBYSCORE", key, min, max, "LIMIT", l._1, l._2)
-      asList
+      as[List[Option[String]]]
   }
 
   // ZRANK
@@ -86,24 +86,24 @@ trait SortedSetOperations { self: Redis =>
   def zrank(key: String, member: String, reverse: Boolean = false) = reverse match {
     case false =>
       send("ZRANK", key, member)
-      asInt
+      as[Int]
     case _ =>
       send("ZREVRANK", key, member)
-      asInt
+      as[Int]
   }
 
   // ZREMRANGEBYRANK
   //
   def zremrangebyrank(key: String, start: Int, end: Int) = {
     send("ZREMRANGEBYRANK", key, String.valueOf(start), String.valueOf(end))
-    asInt
+    as[Int]
   }
 
   // ZREMRANGEBYSCORE
   //
   def zremrangebyscore(key: String, start: Int, end: Int) = {
     send("ZREMRANGEBYSCORE", key, String.valueOf(start), String.valueOf(end))
-    asInt
+    as[Int]
   }
 
   // ZUNION
@@ -111,11 +111,11 @@ trait SortedSetOperations { self: Redis =>
   def zunion(dstKey: String, noOfKeys: Int, keys: List[String], weights: List[Int] = List[Int]()) = weights match {
     case List() =>
       send("ZUNIONSTORE", dstKey, (String.valueOf(noOfKeys) :: keys):_*)
-      asInt
+      as[Int]
     case _ =>
       send("ZUNIONSTORE", 
         dstKey, 
         ((String.valueOf(noOfKeys) :: keys) ::: ("WEIGHTS" :: weights.map(String.valueOf(_)))):_*)
-      asInt
+      as[Int]
   }
 }

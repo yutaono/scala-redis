@@ -93,20 +93,20 @@ class RedisClusterSpec extends Spec
     }
 
     it("list operations should work on the cluster"){
-      r.lpush("java-virtual-machine-langs", "java") should equal(true)
-      r.lpush("java-virtual-machine-langs", "jruby") should equal(true)
-      r.lpush("java-virtual-machine-langs", "groovy") should equal(true)
-      r.lpush("java-virtual-machine-langs", "scala") should equal(true)
+      r.lpush("java-virtual-machine-langs", "java") should equal(Some(1))
+      r.lpush("java-virtual-machine-langs", "jruby") should equal(Some(2))
+      r.lpush("java-virtual-machine-langs", "groovy") should equal(Some(3))
+      r.lpush("java-virtual-machine-langs", "scala") should equal(Some(4))
       r.llen("java-virtual-machine-langs") should equal(Some(4))
     }
 
     it("keytags should ensure mapping to the same server"){
-      r.lpush("java-virtual-machine-{langs}", "java") should equal(true)
-      r.lpush("java-virtual-machine-{langs}", "jruby") should equal(true)
-      r.lpush("java-virtual-machine-{langs}", "groovy") should equal(true)
-      r.lpush("java-virtual-machine-{langs}", "scala") should equal(true)
+      r.lpush("java-virtual-machine-langs", "java") should equal(Some(1))
+      r.lpush("java-virtual-machine-langs", "jruby") should equal(Some(2))
+      r.lpush("java-virtual-machine-langs", "groovy") should equal(Some(3))
+      r.lpush("java-virtual-machine-langs", "scala") should equal(Some(4))
       r.llen("java-virtual-machine-{langs}") should equal(Some(4))
-      r.lpush("microsoft-platform-{langs}", "c++") should equal(true)
+      r.lpush("microsoft-platform-{langs}", "c++") should equal(Some(5))
       r.rpoplpush("java-virtual-machine-{langs}", "microsoft-platform-{langs}").get should equal("java")
       r.llen("java-virtual-machine-{langs}") should equal(Some(3))
       r.llen("microsoft-platform-{langs}") should equal(Some(2))

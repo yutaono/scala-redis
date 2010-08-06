@@ -2,10 +2,10 @@ package com.redis.ds
 
 trait Deque[A] {
   // inserts at the head
-  def addFirst(a: A): Boolean
+  def addFirst(a: A): Option[Int]
 
   // inserts at the tail 
-  def addLast(a: A): Boolean
+  def addLast(a: A): Option[Int]
 
   // clears the deque
   def clear: Boolean

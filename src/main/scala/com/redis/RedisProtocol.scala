@@ -55,7 +55,6 @@ private [redis] trait Reply {
   def reconnect: Boolean
   def receive: Option[Any] = readLine match {
     case null => {
-      // reconnect     // ; receive None
       throw new RedisConnectionException("Connection dropped ..")
     }
     case line =>
@@ -90,11 +89,11 @@ private [redis] trait Reply {
     Integer.parseInt(str) match {
       case -1 => None
       case n => 
-        var l = List[Option[String]]()
+        var l = List[Option[Any]]()
         (1 to n).foreach {i =>
           receive match {
-            case Some(s) =>
-              l = l ::: List(Some(s.toString))
+            case Some(s) => 
+              l = l ::: List(Some(s))
             case None => 
               l = l ::: List(None) // is required to handle nil elements in multi-bulk reply
           }
@@ -106,13 +105,13 @@ private [redis] trait Reply {
 
 private [redis] trait R extends Reply {
 
-  def asString: Option[String] = receive match {
-    case Some(s: String) => Some(s)
+  def as[T]: Option[T] = receive match {
+    case Some(t: T) => Some(t)
     case _ => None
   }
 
-  def asInt: Option[Int] = receive match {
-    case Some(i: Int) => Some(i)
+  def as[T <: Iterable[Option[String]]](f: Iterable[Option[String]] => T): Option[T] = receive match {
+    case Some(t: T) => Some(f(t))
     case _ => None
   }
 
@@ -120,16 +119,6 @@ private [redis] trait R extends Reply {
     case Some(i: Int) if i > 0 => true
     case Some(OK) => true
     case _ => false
-  }
-
-  def asList: Option[List[Option[String]]] = receive match {
-    case Some(l: List[Option[String]]) => Some(l)
-    case _ => None
-  }
-
-  def asSet: Option[Set[Option[String]]] = receive match {
-    case Some(l: List[Option[String]]) => Some(Set(l: _*))
-    case _ => None
   }
 
   def asAny: Any = receive

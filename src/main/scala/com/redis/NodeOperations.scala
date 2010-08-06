@@ -20,7 +20,7 @@ trait NodeOperations { self: Redis =>
   // return the UNIX TIME of the last DB SAVE executed with success.
   def lastsave: Option[Int] = {
     send("LASTSAVE")
-    asInt
+    as[Int]
   }
   
   // SHUTDOWN
@@ -40,7 +40,7 @@ trait NodeOperations { self: Redis =>
   // the info command returns different information and statistics about the server.
   def info = {
     send("INFO")
-    asString
+    as[String]
   }
   
   // MONITOR

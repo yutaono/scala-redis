@@ -37,7 +37,7 @@ class SetOperationsSpec extends Spec
       r.sadd("set-1", "foo").get should equal(0)
     }
     it("should fail if the key points to a non-set") {
-      r.lpush("list-1", "foo") should equal(true)
+      r.lpush("list-1", "foo") should equal(Some(1))
       val thrown = evaluating { r.sadd("list-1", "foo") } should produce [Exception]
       thrown.getMessage should equal("ERR Operation against a key holding the wrong kind of value")
     }
@@ -55,7 +55,7 @@ class SetOperationsSpec extends Spec
       r.srem("set-1", "bar").get should equal(0)
     }
     it("should fail if the key points to a non-set") {
-      r.lpush("list-1", "foo") should equal(true)
+      r.lpush("list-1", "foo") should equal(Some(1))
       val thrown = evaluating { r.srem("list-1", "foo") } should produce [Exception]
       thrown.getMessage should equal("ERR Operation against a key holding the wrong kind of value")
     }
@@ -94,9 +94,9 @@ class SetOperationsSpec extends Spec
       r.smove("set-3", "set-2", "bat").get should equal(0)
     }
     it("should give error if the source or destination key is not a set") {
-      r.lpush("list-1", "foo") should equal(true)
-      r.lpush("list-1", "bar") should equal(true)
-      r.lpush("list-1", "baz") should equal(true)
+      r.lpush("list-1", "foo") should equal(Some(1))
+      r.lpush("list-1", "bar") should equal(Some(2))
+      r.lpush("list-1", "baz") should equal(Some(3))
       r.sadd("set-1", "foo").get should equal(1)
       val thrown = evaluating { r.smove("list-1", "set-1", "bat") } should produce [Exception]
       thrown.getMessage should equal("ERR Operation against a key holding the wrong kind of value")

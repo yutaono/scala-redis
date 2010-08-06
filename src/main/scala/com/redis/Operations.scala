@@ -6,14 +6,14 @@ trait Operations { self: Redis =>
   // returns all the keys matching the glob-style pattern.
   def keys(pattern: String): Option[List[Option[String]]] = {
     send("KEYS", pattern)
-    asList
+    as[List[Option[String]]]
   }
 
   // RANDKEY
   // return a randomly selected key from the currently selected DB.
   def randkey: Option[String] = {
     send("RANDOMKEY")
-    asString
+    as[String]
   }
 
   @deprecated("use randkey") def randomKey = randkey
@@ -36,7 +36,7 @@ trait Operations { self: Redis =>
   // return the size of the db.
   def dbsize: Option[Int] = {
     send("DBSIZE")
-    asInt
+    as[Int]
   }
 
   @deprecated("use dbsize") def dbSize = dbsize 
@@ -52,7 +52,7 @@ trait Operations { self: Redis =>
   // deletes the specified keys.
   def del(key: String, keys: String*): Option[Int] = {
     send("DEL", key, keys: _*)
-    asInt
+    as[Int]
   }
 
   @deprecated("use del") def delete(key: String, keys: String*) = del(key, keys: _*)
@@ -60,7 +60,7 @@ trait Operations { self: Redis =>
   // return the type of the value stored at key in form of a string.
   def getType(key: String): Option[String] = {
     send("TYPE", key)
-    asString
+    as[String]
   }
 
   // EXPIRE (key, expiry)
