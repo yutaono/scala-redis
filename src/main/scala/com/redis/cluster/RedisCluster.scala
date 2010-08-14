@@ -56,8 +56,8 @@ abstract class RedisCluster(hosts: String*) extends Redis
   with SortedSetOperations {
 
   // not needed at cluster level
-  val host = null
-  val port = 0
+  lazy val host = null
+  lazy val port = 0
 
   // abstract val
   val keyTag: Option[KeyTag]

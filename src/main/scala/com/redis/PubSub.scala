@@ -32,7 +32,7 @@ trait PubSub { self: Redis =>
     def run {
       whileTrue {
         as[List[Option[String]]] match {
-          case l @ Some(Some(msgType) :: Some(channel) :: Some(data) :: Nil) =>
+          case Some(Some(msgType) :: Some(channel) :: Some(data) :: Nil) =>
             msgType match {
               case "subscribe" => fn(S(channel, data.toInt))
               case "unsubscribe" if (data.toInt == 0) => 
@@ -45,7 +45,7 @@ trait PubSub { self: Redis =>
                 fn(M(channel, data))
               case x => throw new RuntimeException("unhandled message: " + x)
             }
-          case None => break
+          case _ => break
         }
       }
     }
