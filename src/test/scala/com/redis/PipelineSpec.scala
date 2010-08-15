@@ -52,7 +52,7 @@ class PipelineSpec extends Spec
   }
 
   describe("pipeline3") {
-    it("should do pipelined commands") {
+    it("should handle errors properly in pipelined commands") {
       val thrown = 
         evaluating {
           r.pipeline {
@@ -62,6 +62,18 @@ class PipelineSpec extends Spec
           }
         } should produce [Exception]
       thrown.getMessage should equal ("ERR Operation against a key holding the wrong kind of value")
+      r.get("a").get should equal("abc")
+    }
+  }
+
+  describe("pipeline4") {
+    it("should discard pipelined commands") {
+      r.pipeline {
+        import r._
+        set("a", "abc")
+        throw new RedisMultiExecException("want to discard")
+      } should equal(None)
+      r.get("a") should equal(None)
     }
   }
 }

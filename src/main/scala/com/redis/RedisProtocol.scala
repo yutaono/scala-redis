@@ -48,6 +48,7 @@ private [redis] trait C {
 }
 
 case class RedisConnectionException(message: String) extends RuntimeException(message)
+case class RedisMultiExecException(message: String) extends RuntimeException(message)
 
 private [redis] trait Reply {
 

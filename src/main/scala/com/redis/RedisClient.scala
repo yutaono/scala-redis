@@ -35,8 +35,15 @@ class RedisClient(override val host: String, override val port: Int)
   def pipeline(f: => Unit): Option[List[Option[_]]] = {
     send("MULTI")
     val ok = asString // flush reply stream
-    f
-    send("EXEC")
-    asExec
+    try {
+      f
+      send("EXEC")
+      asExec
+    } catch {
+      case e: RedisMultiExecException => 
+        send("DISCARD")
+        val ok = asString
+        None
+    }
   }
 }
