@@ -7,10 +7,10 @@ trait IO {
   val host: String
   val port: Int
 
-  var socket: Socket = null
-  var out: OutputStream = null
-  var in: BufferedReader = null
-  var db: Int = 0
+  var socket: Socket = _
+  var out: OutputStream = _
+  var in: BufferedReader = _
+  var db: Int = _
 
   def connected = { 
     socket != null 

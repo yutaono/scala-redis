@@ -20,7 +20,7 @@ case class M(origChannel: String, message: String) extends PubSubMessage
 
 import Util._
 trait PubSub { self: Redis =>
-  var pubSub: Boolean = false
+  var pubSub: Boolean = _
 
   class Consumer(fn: PubSubMessage => Any) extends Runnable {
 
@@ -31,7 +31,7 @@ trait PubSub { self: Redis =>
 
     def run {
       whileTrue {
-        as[List[Option[String]]] match {
+        asList match {
           case Some(Some(msgType) :: Some(channel) :: Some(data) :: Nil) =>
             msgType match {
               case "subscribe" => fn(S(channel, data.toInt))

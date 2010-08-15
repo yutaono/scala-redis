@@ -8,7 +8,7 @@ trait HashOperations { self: Redis =>
   
   def hget(key : String, field : String) : Option[String] = {
     send("HGET", key, field)
-    as[String]
+    asString
   }
   
   def hmset(key : String, map : Map[String,String]) : Boolean = {
@@ -20,7 +20,7 @@ trait HashOperations { self: Redis =>
   
   def hmget(key : String, fields : String*) : Option[Map[String,String]] = {
     send("HMGET", key, fields : _*)
-    as[List[Option[String]]].map { values =>
+    asList.map { values =>
       fields.zip(values).flatMap {
         case (field,Some(value)) =>
           List((field,value))
@@ -32,7 +32,7 @@ trait HashOperations { self: Redis =>
   
   def hincrby(key : String, field : String, value : Int) : Option[Int] = {
     send("HINCRBY", key, field, value.toString)
-    as[Int]
+    asInt
   }
   
   def hexists(key : String, field : String) : Boolean = {
@@ -47,12 +47,12 @@ trait HashOperations { self: Redis =>
   
   def hlen(key : String) : Option[Int] = {
     send("HLEN", key)
-    as[Int]
+    asInt
   }
   
   def hkeys(key : String) : Option[List[String]] = {
     send("HKEYS", key)
-    as[List[Option[String]]].map(_.flatMap { 
+    asList.map(_.flatMap { 
       case Some(v) => List(v)
       case None => Nil
     })
@@ -60,7 +60,7 @@ trait HashOperations { self: Redis =>
   
   def hvals(key : String) : Option[List[String]] = {
     send("HVALS", key)
-    as[List[Option[String]]].map(_.flatMap {
+    asList.map(_.flatMap { 
       case Some(v) => List(v)
       case None => Nil
     })
@@ -68,7 +68,7 @@ trait HashOperations { self: Redis =>
   
   def hgetall(key : String) : Option[Map[String,String]] = {
     send("HGETALL", key)
-    as[List[Option[String]]].map(_.grouped(2).toList.flatMap {
+    asList.map(_.grouped(2).toList.flatMap {
       case List(Some(f), Some(v)) => List((f,v))
       case _ => Nil
     }.toMap)

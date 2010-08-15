@@ -6,14 +6,14 @@ trait ListOperations { self: Redis =>
   // add string value to the head of the list stored at key
   def lpush(key: String, value: String): Option[Int] = {
     send("LPUSH", key, value)
-    as[Int]
+    asInt
   }
 
   // RPUSH
   // add string value to the head of the list stored at key
   def rpush(key: String, value: String): Option[Int] = {
     send("RPUSH", key, value)
-    as[Int]
+    asInt
   }
 
   // LLEN
@@ -22,7 +22,7 @@ trait ListOperations { self: Redis =>
   // If the value stored at key is not a list an error is returned.
   def llen(key: String): Option[Int] = {
     send("LLEN", key)
-    as[Int]
+    asInt
   }
 
   // LRANGE
@@ -30,7 +30,7 @@ trait ListOperations { self: Redis =>
   // Start and end are zero-based indexes. 
   def lrange(key: String, start: Int, end: Int): Option[List[Option[String]]] = {
     send("LRANGE", key, String.valueOf(start), String.valueOf(end))
-    as[List[Option[String]]]
+    asList
   }
 
   // LTRIM
@@ -45,7 +45,7 @@ trait ListOperations { self: Redis =>
   // Negative indexes are supported, for example -1 is the last element, -2 the penultimate and so on.
   def lindex(key: String, index: Int): Option[String] = {
     send("LINDEX", key, String.valueOf(index))
-    as[String]
+    asString
   }
 
   // LSET
@@ -59,32 +59,32 @@ trait ListOperations { self: Redis =>
   // Remove the first count occurrences of the value element from the list.
   def lrem(key: String, count: Int, value: String): Option[Int] = {
     send("LREM", key, String.valueOf(count), value)
-    as[Int]
+    asInt
   }
 
   // LPOP
   // atomically return and remove the first (LPOP) or last (RPOP) element of the list
   def lpop(key: String): Option[String] = {
     send("LPOP", key)
-    as[String]
+    asString
   }
 
   // RPOP
   // atomically return and remove the first (LPOP) or last (RPOP) element of the list
   def rpop(key: String): Option[String] = {
     send("RPOP", key)
-    as[String]
+    asString
   }
 
   // RPOPLPUSH
   // Remove the first count occurrences of the value element from the list.
   def rpoplpush(srcKey: String, dstKey: String): Option[String] = {
     send("RPOPLPUSH", srcKey, dstKey)
-    as[String]
+    asString
   }
 
   def blpop(timeoutInSeconds: Int, key: String, keys: String*): Option[List[Option[String]]] = {
     send("BLPOP", key, (keys.toList ::: List(String.valueOf(timeoutInSeconds))): _*)
-    as[List[Option[String]]]
+    asList
   }
 }

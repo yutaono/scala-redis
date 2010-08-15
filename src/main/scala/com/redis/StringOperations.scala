@@ -13,14 +13,14 @@ trait StringOperations { self: Redis =>
   // gets the value for the specified key.
   def get(key: String): Option[String] = {
     send("GET", key)
-    as[String]
+    asString
   }
   
   // GETSET (key, value)
   // is an atomic set this value and return the old value command.
   def getset(key: String, value: String): Option[String] = {
     send("GETSET", key, value)
-    as[String]
+    asString
   }
 
   @deprecated("use getset") def getSet(key: String, value: String) = getset(key, value)
@@ -38,14 +38,14 @@ trait StringOperations { self: Redis =>
   // increments the specified key by 1
   def incr(key: String): Option[Int] = {
     send("INCR", key)
-    as[Int]
+    asInt
   }
 
   // INCR (key, increment)
   // increments the specified key by increment
   def incrby(key: String, increment: Int): Option[Int] = {
     send("INCRBY", key, String.valueOf(increment))
-    as[Int]
+    asInt
   }
 
   @deprecated("use incrby") def incrBy(key: String, increment: Int) = incrby(key, increment)
@@ -54,14 +54,14 @@ trait StringOperations { self: Redis =>
   // decrements the specified key by 1
   def decr(key: String): Option[Int] = {
     send("DECR", key)
-    as[Int]
+    asInt
   }
 
   // DECR (key, increment)
   // decrements the specified key by increment
   def decrby(key: String, increment: Int): Option[Int] = {
     send("DECRBY", key, String.valueOf(increment))
-    as[Int]
+    asInt
   }
 
   @deprecated("use decrby") def decrBy(key: String, increment: Int) = decrby(key, increment)
@@ -70,7 +70,7 @@ trait StringOperations { self: Redis =>
   // get the values of all the specified keys.
   def mget(key: String, keys: String*) = {
     send("MGET", key, keys: _*)
-    as[List[Option[String]]]
+    asList
   }
 
   // MSET (key1 value1 key2 value2 ..)
