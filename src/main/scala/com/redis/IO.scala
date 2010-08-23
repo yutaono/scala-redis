@@ -3,7 +3,7 @@ package com.redis
 import java.io._
 import java.net.Socket
 
-trait IO {
+trait IO extends Log {
   val host: String
   val port: Int
 
@@ -61,6 +61,7 @@ trait IO {
   
   // Writes data to a socket using the specified block.
   def write(data: String) = {
+    debug("C: " + data)
     if(!connected) connect;
     write_to_socket(data){ os =>
       try {
@@ -76,7 +77,9 @@ trait IO {
   def readLine: String = {
     try {
       if(!connected) connect;
-      in.readLine
+      val str = in.readLine
+      debug("S: " + str)
+      str
     } catch {
       case x => {
         throw new RuntimeException(x)
