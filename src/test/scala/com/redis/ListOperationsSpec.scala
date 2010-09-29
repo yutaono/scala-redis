@@ -282,6 +282,7 @@ class ListOperationsSpec extends Spec
 
   describe("blpop") {
     it ("should pop in a blocking mode") {
+      val r1 = new RedisClient("localhost", 6379)
       class Foo extends Runnable {
         def start () {
           val myThread = new Thread(this) ;
@@ -291,11 +292,12 @@ class ListOperationsSpec extends Spec
         def run {
           val v = r.blpop(3, "l1", "l2")
           v.get should equal(List(Some("l1"), Some("a")))
+          r1.disconnect
         }
       }
       (new Foo).start
-      println(r.llen("l1"))
-      r.lpush("l1", "a")
+      r1.llen("l1").get should equal(0)
+      r1.lpush("l1", "a")
       Thread.sleep(5000) // to prevent flushdb
     }
   }

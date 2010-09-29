@@ -42,21 +42,15 @@ abstract class RedisDeque(val blocking: Boolean = false, val timeoutInSecs: Int 
   def addFirst(a: String) = lpush(key, a) 
   def addLast(a: String) = rpush(key, a)
 
-  def peekFirst = lrange(key, 0, 0) match {
-    case Some(l) => Some(l.head.get)
-    case None => None
-  }
+  def peekFirst = lrange(key, 0, 0).map(_.head.get) 
 
-  def peekLast = lrange(key, -1, -1) match {
-    case Some(l) => Some(l.head.get)
-    case None => None
-  }
+  def peekLast = lrange(key, -1, -1).map(_.head.get) 
 
   def poll =
     if (blocking == true) {
       blpop(timeoutInSecs, key) match {
-        case Some(l) => l(1)
-        case None => None
+        case Some(maybeKey :: maybeValue :: Nil) => maybeValue
+        case _ => None
       }
     } else lpop(key) 
 
@@ -65,15 +59,12 @@ abstract class RedisDeque(val blocking: Boolean = false, val timeoutInSecs: Int 
   def pollLast =
     if (blocking == true) {
       brpop(timeoutInSecs, key) match {
-        case Some(l) => l(1)
-        case None => None
+        case Some(maybeKey :: maybeValue :: Nil) => maybeValue
+        case _ => None
       }
     } else rpop(key) 
 
-  def size = llen(key) match {
-    case Some(i) => i
-    case _ => 0
-  }
+  def size = llen(key) getOrElse(0)
 
   def isEmpty = size == 0
 
