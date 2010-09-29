@@ -14,7 +14,7 @@ class DequeSpec extends Spec
                 with BeforeAndAfterEach
                 with BeforeAndAfterAll {
 
-  val r = new RedisDequeClient("localhost", 6379).mkDeque("td")
+  val r = new RedisDequeClient("localhost", 6379).getDeque("td")
 
   override def beforeEach = {
     r.clear

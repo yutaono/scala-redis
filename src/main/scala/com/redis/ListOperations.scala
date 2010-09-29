@@ -87,4 +87,9 @@ trait ListOperations { self: Redis =>
     send("BLPOP", key, (keys.toList ::: List(String.valueOf(timeoutInSeconds))): _*)
     asList
   }
+
+  def brpop(timeoutInSeconds: Int, key: String, keys: String*): Option[List[Option[String]]] = {
+    send("BRPOP", key, (keys.toList ::: List(String.valueOf(timeoutInSeconds))): _*)
+    asList
+  }
 }

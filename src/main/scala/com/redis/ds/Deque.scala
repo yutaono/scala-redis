@@ -34,7 +34,7 @@ trait Deque[A] {
 
 import com.redis.ListOperations
 
-trait RedisDeque
+abstract class RedisDeque(val blocking: Boolean = false, val timeoutInSecs: Int = 0)
   extends Deque[String] { self: ListOperations =>
 
   val key: String
@@ -52,11 +52,23 @@ trait RedisDeque
     case None => None
   }
 
-  def poll = lpop(key) 
+  def poll =
+    if (blocking == true) {
+      blpop(timeoutInSecs, key) match {
+        case Some(l) => l(1)
+        case None => None
+      }
+    } else lpop(key) 
 
   def pollFirst = poll
 
-  def pollLast = rpop(key) 
+  def pollLast =
+    if (blocking == true) {
+      brpop(timeoutInSecs, key) match {
+        case Some(l) => l(1)
+        case None => None
+      }
+    } else rpop(key) 
 
   def size = llen(key) match {
     case Some(i) => i
@@ -77,8 +89,8 @@ trait RedisDeque
 import com.redis.{Redis, ListOperations}
 
 class RedisDequeClient(val h: String, val p: Int) {
-  def mkDeque(k: String) =
-    new RedisDeque with ListOperations with Redis {
+  def getDeque(k: String, blocking: Boolean = false, timeoutInSecs: Int = 0) =
+    new RedisDeque(blocking, timeoutInSecs) with ListOperations with Redis {
       val host = h
       val port = p
       val key = k

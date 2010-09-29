@@ -280,13 +280,23 @@ class ListOperationsSpec extends Spec
     }
   }
 
-  /**
   describe("blpop") {
-    it ("should do") {
-      r.lpush("l1", "a") should equal(true)
-      r.lpop("l1")
-      r.llen("l1") should equal(Some(0))
+    it ("should pop in a blocking mode") {
+      class Foo extends Runnable {
+        def start () {
+          val myThread = new Thread(this) ;
+          myThread.start() ;
+        }
+
+        def run {
+          val v = r.blpop(3, "l1", "l2")
+          v.get should equal(List(Some("l1"), Some("a")))
+        }
+      }
+      (new Foo).start
+      println(r.llen("l1"))
+      r.lpush("l1", "a")
+      Thread.sleep(5000) // to prevent flushdb
     }
   }
-**/
 }
