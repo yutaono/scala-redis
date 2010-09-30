@@ -43,7 +43,7 @@ let's connect and get a key:
     scala> val r.set("key", "some value")
     scala> val r.get("key")
 
-h1. License
+## License
 
 This software is licensed under the Apache 2 license, quoted below.
 
