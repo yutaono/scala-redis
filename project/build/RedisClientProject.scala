@@ -1,12 +1,17 @@
 import sbt._
 
-class RedisClientProject(info: ProjectInfo) extends DefaultProject(info) with AutoCompilerPlugins
+class RedisClientProject(info: ProjectInfo) extends DefaultProject(info) 
 {
   override def useDefaultConfigurations = true
 
-  val scalatest = "org.scala-tools.testing" % "scalatest" % "0.9.5" % "test->default"
-  val specs = "org.scala-tools.testing" % "specs" % "1.5.0"
-  val mockito = "org.mockito" % "mockito-all" % "1.7"
-  val junit = "junit" % "junit" % "4.5"
-  // val sxr = compilerPlugin("org.scala-tools.sxr" %% "sxr" % "0.2.1")
+  val scalaToolsSnapshots = "Scala-Tools Maven2 Snapshots Repository" at "http://scala-tools.org/repo-snapshots"
+  val scalaToolsReleases = "Scala-Tools Maven2 Releases Repository" at "http://scala-tools.org/repo-releases"
+  val scalatest =
+    buildScalaVersion match {
+      case "2.7.7" => 
+        "org.scalatest" % "scalatest" % "1.0" 
+      case "2.8.0.Beta1" =>
+        "org.scalatest" % "scalatest" % "1.0.1-for-scala-2.8.0.Beta1-with-test-interfaces-0.3-SNAPSHOT" 
+    }
+  val junit = "junit" % "junit" % "4.8.1"
 }

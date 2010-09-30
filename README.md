@@ -22,6 +22,8 @@ http://code.google.com/p/redis/
 
 - sbt (get it at http://code.google.com/p/simple-build-tool/)
 
+## All tests are functional tests and require a running instance of Redis
+
 ## Usage
 
 Start your redis instance (usually redis-server will do it)
@@ -37,7 +39,7 @@ And you are ready to start issuing commands to the server(s)
 let's connect and get a key:
 
     scala> import com.redis._
-    scala> val r = new Redis("localhost", 6379)
+    scala> val r = new RedisClient("localhost", 6379)
     scala> val r.set("key", "some value")
     scala> val r.get("key")
 

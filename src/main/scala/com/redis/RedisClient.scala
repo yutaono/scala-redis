@@ -1,39 +1,42 @@
 package com.redis
 
-import com.redis.operations._
+object RedisClient {
+  trait SortOrder
+  case object ASC extends SortOrder
+  case object DESC extends SortOrder
+}
 
-/**
- * Redis client
- *
- */
+trait Redis extends IO with Protocol {
 
-class Redis(val host: String, val port: Int) extends Operations 
-  with ListOperations 
-  with SetOperations 
+  def send(command: String, key: String, values: String*) = {
+    snd(command, key, values:_*) { write }
+  }
+
+  def send(command: String) = {
+    snd(command) { write }
+  }
+
+  def cmd(command: String, key: String, values: String*) = {
+    MultiBulkCommand(command, key, values:_*).toString
+  }
+
+  def cmd(command: String) = {
+    InlineCommand(command).toString
+  }
+}
+
+class RedisClient(override val host: String, override val port: Int)
+  extends Redis
+  with Operations 
   with NodeOperations 
-  with KeySpaceOperations 
-  with SortOperations
-  with SortedSetOperations {
-  
-  // auxiliary constructor
-  def this() = this("localhost", 6379)
-  
-  // Points to the connection to a server instance
-  val connection = Connection(host, port)
-  var db: Int = 0
-  
-  // Connect and Disconnect to the Redis server
-  def connect = connection.connect
-  def disconnect = connection.disconnect
-  def connected: Boolean = connection.connected
-  
-  // Establish the connection to the server instance on initialize
+  with StringOperations
+  with ListOperations
+  with SetOperations
+  with SortedSetOperations
+  with PubSub {
+
   connect
-  
-  // Get Redis Client connection.
-  def getConnection(key: String) = getConnection
-  def getConnection = connection
-  
-  // Outputs a formatted representation of the Redis server.
-  override def toString = connection.host+":"+connection.port+" <connected:"+connection.connected+">"
+
+  def this() = this("localhost", 6379)
+  override def toString = host + ":" + String.valueOf(port)
 }
