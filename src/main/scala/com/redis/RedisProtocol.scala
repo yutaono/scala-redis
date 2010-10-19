@@ -40,7 +40,7 @@ private [redis] case class InlineCommand(command: String) extends Command(comman
 }
 
 private [redis] trait C {
-  def snd(command: String, key: String, values: String*)(to: String => Unit) =
+  def snd(command: String, key: String, values: String*)(to: String => Unit) = 
     to(MultiBulkCommand(command, key, values:_*).toString)
 
   def snd(command: String)(to: String => Unit) = 
@@ -80,12 +80,7 @@ private [redis] trait Reply {
     case (MULTI, str) =>
       Integer.parseInt(str) match {
         case -1 => None
-        case n => 
-          var l = List[Option[String]]()
-          (1 to n).foreach {i =>
-            l = l ::: List(receive(bulkReply))
-          }
-          Some(l)
+        case n => Some(List.fill(n)(receive(bulkReply orElse singleLineReply)))
       }
   }
 
