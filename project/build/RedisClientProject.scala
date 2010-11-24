@@ -20,11 +20,14 @@ class RedisClientProject(info: ProjectInfo) extends DefaultProject(info)
         "org.scalatest" % "scalatest" % "1.2-for-scala-2.8.0.RC6-SNAPSHOT" % "test"
       case "2.8.0" =>
         "org.scalatest" % "scalatest" % "1.2-for-scala-2.8.0.final-SNAPSHOT" % "test"
+      case "2.8.1" =>
+        "org.scalatest" % "scalatest" % "1.2-for-scala-2.8.0.final-SNAPSHOT" % "test"
     }
   val junit = "junit" % "junit" % "4.8.1"
   val log4j = "log4j" % "log4j" % "1.2.16"
   val slf4japi = "org.slf4j" % "slf4j-api" % "1.5.8"
   val slf4j = "org.slf4j" % "slf4j-log4j12" % "1.5.8"
+  val commons_pool = "commons-pool" % "commons-pool" % "1.5.5" % "compile" //ApacheV2
 
   override def packageSrcJar = defaultJarPath("-sources.jar")
   lazy val sourceArtifact = Artifact.sources(artifactID)
