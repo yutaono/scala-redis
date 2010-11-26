@@ -62,31 +62,31 @@ abstract class RedisCluster(hosts: String*) extends RedisCommand {
   // instantiating a cluster will automatically connect participating nodes to the server
   val clients = hosts.toList.map {h => 
     val hp = h.split(":")
-    new RedisClient(hp(0), hp(1).toInt)
+    new RedisClientPool(hp(0), hp(1).toInt)
   }
 
   // the hash ring will instantiate with the nodes up and added
-  val hr = HashRing[RedisClient](clients, POINTS_PER_SERVER)
+  val hr = HashRing[RedisClientPool](clients, POINTS_PER_SERVER)
 
   // get node for the key
   def nodeForKey(key: String) = {
     keyTag.get.tag(key) match {
-      case Some(s) => hr.getNode(s)
-      case None => hr.getNode(key)
+      case Some(s) => hr.getNode(s).withClient { client => client }
+      case None => hr.getNode(key).withClient { client => client }
     }
   }
 
   // add a server
   def addServer(server: String) = {
     val hp = server.split(":")
-    hr addNode new RedisClient(hp(0), hp(1).toInt)
+    hr addNode new RedisClientPool(hp(0), hp(1).toInt)
   }
 
   // collect all keys from nodes
   def nodeKeys(glob: String) = {
     val rs = hr.cluster.toList
     for(r <- rs;
-        val ks = r.keys(glob) if ks.isDefined)
+        val ks = r.withClient { c => c.keys(glob) } if ks.isDefined)
       yield ks.get 
   }
 
@@ -101,13 +101,17 @@ abstract class RedisCluster(hosts: String*) extends RedisCommand {
     }
   }
 
-  override def flushdb = hr.cluster.map(_.flushdb).forall(_ == true)
-  override def flushall = hr.cluster.map(_.flushall).forall(_ == true)
-  override def quit = hr.cluster.map(_.quit).forall(_ == true)
+  private def onAllConns[T](body: RedisClient => T) = 
+    hr.cluster.map(p => p.withClient { client => body(client) }) // .forall(_ == true)
+
+  override def flushdb = onAllConns(_.flushdb) forall(_ == true)
+  override def flushall = onAllConns(_.flushall) forall(_ == true)
+  override def quit = onAllConns(_.quit) forall(_ == true)
+
   override def rename(oldkey: String, newkey: String): Boolean = nodeForKey(oldkey).rename(oldkey, newkey)
   override def renamenx(oldkey: String, newkey: String): Boolean = nodeForKey(oldkey).renamenx(oldkey, newkey)
   override def dbsize: Option[Int] = {
-    hr.cluster.map(_.dbsize).foldLeft(0) { (a, b) =>
+    onAllConns(_.dbsize).foldLeft(0) { (a, b) =>
       b match {
         case Some(i) => a + i
         case None => a
@@ -149,10 +153,11 @@ abstract class RedisCluster(hosts: String*) extends RedisCommand {
   /**
    * NodeOperations
    */
-  override def save = hr.cluster.map(_.save).forall(_ == true)
-  override def bgsave = hr.cluster.map(_.bgsave).forall(_ == true)
-  override def shutdown = hr.cluster.map(_.shutdown).forall(_ == true)
-  override def bgrewriteaof = hr.cluster.map(_.bgrewriteaof).forall(_ == true)
+  override def save = onAllConns(_.save) forall(_ == true)
+  override def bgsave = onAllConns(_.bgsave) forall(_ == true)
+  override def shutdown = onAllConns(_.shutdown) forall(_ == true)
+  override def bgrewriteaof = onAllConns(_.bgrewriteaof) forall(_ == true)
+
   override def lastsave = throw new UnsupportedOperationException("not supported on a cluster")
   override def monitor = throw new UnsupportedOperationException("not supported on a cluster")
   override def info = throw new UnsupportedOperationException("not supported on a cluster")
