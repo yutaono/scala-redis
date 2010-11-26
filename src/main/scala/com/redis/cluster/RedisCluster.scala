@@ -47,17 +47,11 @@ object NoOpKeyTag extends KeyTag {
   def tag(key: String) = Some(key)
 }
 
-abstract class RedisCluster(hosts: String*) extends Redis
-  with NodeOperations
-  with Operations
-  with StringOperations
-  with ListOperations 
-  with SetOperations
-  with SortedSetOperations {
+abstract class RedisCluster(hosts: String*) extends RedisCommand {
 
   // not needed at cluster level
-  lazy val host = null
-  lazy val port = 0
+  override val host = null
+  override val port = 0
 
   // abstract val
   val keyTag: Option[KeyTag]
@@ -279,4 +273,19 @@ abstract class RedisCluster(hosts: String*) extends Redis
     nodeForKey(key).zrangeWithScore(key, start, end, sortAs)
   override def zrangebyscore(key: String, min: String, max: String, limit: Option[(String, String)]) =
     nodeForKey(key).zrangebyscore(key, min, max, limit)
+
+  /**
+   * HashOperations
+   */
+  override def hset(key: String, field: String, value: String) = nodeForKey(key).hset(key, field, value)
+  override def hget(key: String, field: String) = nodeForKey(key).hget(key, field)
+  override def hmset(key: String, map: collection.immutable.Map[String,String]) = nodeForKey(key).hmset(key, map)
+  override def hmget(key: String, fields: String*) = nodeForKey(key).hmget(key, fields.toArray: _*)
+  override def hincrby(key: String, field: String, value: Int) = nodeForKey(key).hincrby(key, field, value)
+  override def hexists(key: String, field: String) = nodeForKey(key).hexists(key, field)
+  override def hdel(key: String, field: String) = nodeForKey(key).hdel(key, field)
+  override def hlen(key: String) = nodeForKey(key).hlen(key)
+  override def hkeys(key: String) = nodeForKey(key).hkeys(key)
+  override def hvals(key: String) = nodeForKey(key).hvals(key)
+  override def hgetall(key: String) = nodeForKey(key).hgetall(key)
 }
