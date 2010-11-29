@@ -18,16 +18,11 @@ class RedisClusterSpec extends Spec
     val keyTag = Some(RegexKeyTag)
   }
 
-  override def beforeEach = {
-  }
+  override def beforeEach = {}
 
-  override def afterEach = {
-    r.flushdb
-  }
+  override def afterEach = r.flushdb
 
-  override def afterAll = {
-    r.flushdb
-  }
+  override def afterAll = r.close
 
   describe("cluster operations") {
     it("should set") {

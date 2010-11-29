@@ -47,11 +47,11 @@ object NoOpKeyTag extends KeyTag {
   def tag(key: String) = Some(key)
 }
 
-abstract class RedisCluster(hosts: String*) extends RedisCommand {
+abstract class RedisCluster(hosts: String*) extends RedisClient {
 
   // not needed at cluster level
-  override val host = null
-  override val port = 0
+  // override val host = null
+  // override val port = 0
 
   // abstract val
   val keyTag: Option[KeyTag]
@@ -101,12 +101,13 @@ abstract class RedisCluster(hosts: String*) extends RedisCommand {
     }
   }
 
-  private def onAllConns[T](body: RedisClient => T) = 
+  def onAllConns[T](body: RedisClient => T) = 
     hr.cluster.map(p => p.withClient { client => body(client) }) // .forall(_ == true)
 
   override def flushdb = onAllConns(_.flushdb) forall(_ == true)
   override def flushall = onAllConns(_.flushall) forall(_ == true)
   override def quit = onAllConns(_.quit) forall(_ == true)
+  def close = hr.cluster.map(_.close)
 
   override def rename(oldkey: String, newkey: String): Boolean = nodeForKey(oldkey).rename(oldkey, newkey)
   override def renamenx(oldkey: String, newkey: String): Boolean = nodeForKey(oldkey).renamenx(oldkey, newkey)

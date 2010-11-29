@@ -5,11 +5,21 @@ import org.apache.commons.pool.impl._
 
 
 private [redis] class RedisClientFactory(host: String, port: Int) extends PoolableObjectFactory {
-  def makeObject = new RedisClient(host, port)
-  def destroyObject(rc: Object): Unit = rc.asInstanceOf[RedisClient].disconnect
-  def passivateObject(rc: Object): Unit = rc.asInstanceOf[RedisClient].disconnect
+  // when we make an object it's already connected
+  def makeObject = new RedisClient(host, port) 
+
+  // quit & disconnect
+  def destroyObject(rc: Object): Unit = { 
+    rc.asInstanceOf[RedisClient].quit // need to quit for closing the connection
+    rc.asInstanceOf[RedisClient].disconnect // need to disconnect for releasing sockets
+  }
+
+  // noop: we want to have it connected
+  def passivateObject(rc: Object): Unit = {} 
   def validateObject(rc: Object) = rc.asInstanceOf[RedisClient].connected == true
-  def activateObject(rc: Object): Unit = rc.asInstanceOf[RedisClient].connect
+
+  // noop: it should be connected already
+  def activateObject(rc: Object): Unit = {}
 }
 
 class RedisClientPool(host: String, port: Int) {
@@ -24,4 +34,7 @@ class RedisClientPool(host: String, port: Int) {
       pool.returnObject(client)
     }
   }
+
+  // close pool & free resources
+  def close = pool.close
 }
