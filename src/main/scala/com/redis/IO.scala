@@ -65,7 +65,7 @@ trait IO extends Log {
     if(!connected) connect;
     write_to_socket(data){ os =>
       try {
-        os.write(data.getBytes)
+        os.write(data.getBytes("UTF-8"))
         os.flush
       } catch {
         case x => 
