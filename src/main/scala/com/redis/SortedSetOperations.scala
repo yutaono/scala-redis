@@ -1,10 +1,12 @@
-package com.redis
+/*package com.redis
+
+import serialization._
 
 trait SortedSetOperations { self: Redis =>
   
   // ZADD
   // Add the specified member having the specified score to the sorted set stored at key.
-  def zadd(key: String, score: String, member: String): Option[Int] = {
+  def zadd(key: Any, score: String, member: String): Option[Int] = {
     send("ZADD", key, score, member)
     asInt
   }
@@ -119,3 +121,4 @@ trait SortedSetOperations { self: Redis =>
       asInt
   }
 }
+*/

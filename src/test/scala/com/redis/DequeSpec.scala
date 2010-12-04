@@ -1,4 +1,4 @@
-package com.redis.ds
+/*package com.redis.ds
 
 import org.scalatest.Spec
 import org.scalatest.BeforeAndAfterEach
@@ -75,3 +75,4 @@ class DequeSpec extends Spec
     }
   }
 }
+*/

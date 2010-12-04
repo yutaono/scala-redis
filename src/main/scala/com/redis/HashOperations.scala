@@ -1,76 +1,65 @@
 package com.redis
 
+import serialization._
+
 trait HashOperations { self: Redis =>
-  def hset(key : String, field : String, value : String): Boolean = {
-    send("HSET", key, field, value)
+  def hset(key : Any, field : Any, value : Any)(implicit format: Format): Boolean = {
+    send("HSET", List(key, field, value))
     asBoolean
   }
   
-  def hget(key : String, field : String) : Option[String] = {
-    send("HGET", key, field)
-    asString
+  def hget[A](key : Any, field : Any)(implicit format: Format, parse: Parse[A]) : Option[A] = {
+    send("HGET", List(key, field))
+    asBulk
   }
   
-  def hmset(key : String, map : Map[String,String]) : Boolean = {
-    send("HMSET", key, map.flatMap { case (field, value) =>
-      List(field, value)
-    }.toSeq : _*)
+  def hmset(key : Any, map : Map[Any,Any])(implicit format: Format) : Boolean = {
+    send("HMSET", key :: flattenPairs(map))
     asBoolean
   }
   
-  def hmget(key : String, fields : String*) : Option[Map[String,String]] = {
-    send("HMGET", key, fields : _*)
+  def hmget[K,V](key: Any, fields: K*)(implicit format: Format, parseV: Parse[V]): Option[Map[K,V]] = {
+    send("HMGET", key :: fields.toList)
     asList.map { values =>
       fields.zip(values).flatMap {
-        case (field,Some(value)) =>
-          List((field,value))
-        case (field,None) =>
-          Nil
+        case (field,Some(value)) => Some((field,value))
+        case (_,None) => None
       }.toMap
     }
   }
   
-  def hincrby(key : String, field : String, value : Int) : Option[Int] = {
-    send("HINCRBY", key, field, value.toString)
+  def hincrby(key : Any, field : Any, value : Int)(implicit format: Format) : Option[Int] = {
+    send("HINCRBY", List(key, field, value))
     asInt
   }
   
-  def hexists(key : String, field : String) : Boolean = {
-    send("HEXISTS", key, field)
+  def hexists(key : Any, field : Any)(implicit format: Format) : Boolean = {
+    send("HEXISTS", List(key, field))
     asBoolean
   }
   
-  def hdel(key : String, field : String) : Boolean = {
-    send("HDEL", key, field)
+  def hdel(key : Any, field : Any)(implicit format: Format) : Boolean = {
+    send("HDEL", List(key, field))
     asBoolean
   }
   
-  def hlen(key : String) : Option[Int] = {
-    send("HLEN", key)
+  def hlen(key : Any)(implicit format: Format) : Option[Int] = {
+    send("HLEN", List(key))
     asInt
   }
   
-  def hkeys(key : String) : Option[List[String]] = {
-    send("HKEYS", key)
-    asList.map(_.flatMap { 
-      case Some(v) => List(v)
-      case None => Nil
-    })
+  def hkeys[A](key : Any)(implicit format: Format, parse: Parse[A]) : Option[List[A]] = {
+    send("HKEYS", List(key))
+    asList.map(_.flatten)
   }
   
-  def hvals(key : String) : Option[List[String]] = {
-    send("HVALS", key)
-    asList.map(_.flatMap { 
-      case Some(v) => List(v)
-      case None => Nil
-    })
+  def hvals[A](key : Any)(implicit format: Format, parse: Parse[A]) : Option[List[A]] = {
+    send("HVALS", List(key))
+    asList.map(_.flatten)
   }
   
-  def hgetall(key : String) : Option[Map[String,String]] = {
-    send("HGETALL", key)
-    asList.map(_.grouped(2).toList.flatMap {
-      case List(Some(f), Some(v)) => List((f,v))
-      case _ => Nil
-    }.toMap)
+  def hgetall[K,V](key : Any)(implicit format: Format, parseK: Parse[K], parseV: Parse[V]) : Option[Map[K,V]] = {
+    send("HGETALL", List(key))
+    asListPairs[K,V].map(_.flatten.toMap)
   }
 }

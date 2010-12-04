@@ -1,4 +1,4 @@
-package com.redis
+/*package com.redis
 
 import scala.actors._
 import scala.actors.Actor._
@@ -48,3 +48,4 @@ class Publisher(client: RedisClient) extends Actor {
   }
 }
 
+*/

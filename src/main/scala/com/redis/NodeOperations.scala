@@ -1,5 +1,7 @@
 package com.redis
 
+import serialization._
+
 trait NodeOperations { self: Redis =>
 
   // SAVE
@@ -54,7 +56,7 @@ trait NodeOperations { self: Redis =>
   // The SLAVEOF command can change the replication settings of a slave on the fly.
   def slaveof(options: Any): Boolean = options match {
     case (h: String, p: Int) => {
-      send("SLAVEOF", h, String.valueOf(p))
+      send("SLAVEOF", List(h, p))
       asBoolean
     }
     case _ => setAsMaster

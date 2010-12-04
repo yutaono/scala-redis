@@ -1,4 +1,4 @@
-package com.redis
+/*package com.redis
 
 object Util {
   object Break extends RuntimeException;
@@ -77,3 +77,4 @@ trait PubSub { self: Redis =>
     send("PUBLISH", channel, msg)
   }
 }
+*/

@@ -1,73 +1,62 @@
 package com.redis
 
+import serialization.Parse
+import Parse.{Implicits => Parsers}
+
 private [redis] object Commands {
 
   // Response codes from the Redis server
   val ERR    = '-'
-  val OK     = "OK"
-  val QUEUED = "QUEUED"
+  val OK     = "OK".getBytes("UTF-8")
+  val QUEUED = "QUEUED".getBytes("UTF-8")
   val SINGLE = '+'
   val BULK   = '$'
   val MULTI  = '*'
   val INT    = ':'
 
-  val LS     = "\r\n"
-}
+  val LS     = "\r\n".getBytes("UTF-8")
 
-import Commands._
-
-private [redis] sealed abstract class Command(command: String)
-
-private [redis] trait WithLS {
-  def withLS(str: String, strs: String*) = 
-    (str :: strs.toList) mkString(LS)
-}
-
-private [redis] case class MultiBulkCommand(command: String, key: String, values: String*) 
-  extends Command(command) with WithLS { 
-  override def toString: String = {
-    val nelems = "%s%d".format(MULTI, values.toList.size + 2)
-    val cl = "%s%d".format(BULK, command.length)
-    val kl = "%s%d".format(BULK, key.length)
-    val vs = values.toList.map(v => "%s%d%s%s%s".format(BULK, v.length, LS, v, LS))
-    withLS(nelems, cl, command, kl, key, vs.mkString)
+  def multiBulk(args: Seq[Array[Byte]]): Array[Byte] = {
+    val b = new scala.collection.mutable.ArrayBuilder.ofByte
+    b ++= "*%d".format(args.size).getBytes
+    b ++= LS
+    args foreach { arg =>
+      b ++= "$%d".format(arg.size).getBytes
+      b ++= LS
+      b ++= arg
+      b ++= LS
+    }
+    b.result
   }
 }
 
-private [redis] case class InlineCommand(command: String) extends Command(command) {
-  override def toString: String = 
-    "%s%s".format(command, LS)
-}
-
-private [redis] trait C {
-  def snd(command: String, key: String, values: String*)(to: String => Unit) = 
-    to(MultiBulkCommand(command, key, values:_*).toString)
-
-  def snd(command: String)(to: String => Unit) = 
-    to(InlineCommand(command).toString)
-}
+import Commands._
 
 case class RedisConnectionException(message: String) extends RuntimeException(message)
 case class RedisMultiExecException(message: String) extends RuntimeException(message)
 
 private [redis] trait Reply {
 
-  def readLine: String
-  def readCounted(c: Int): String
+  type Reply[T] = PartialFunction[(Char, Array[Byte]), T]
+  type SingleReply = Reply[Option[Array[Byte]]]
+  type MultiReply = Reply[Option[List[Option[Array[Byte]]]]]
+
+  def readLine: Array[Byte]
+  def readCounted(c: Int): Array[Byte]
   def reconnect: Boolean
 
-  val integerReply: PartialFunction[(Char, String), Option[Int]] = {
-    case (INT, s) => Some(Integer.parseInt(s))
+  val integerReply: Reply[Option[Int]] = {
+    case (INT, s) => Some(Parsers.parseInt(s))
   }
 
-  val singleLineReply: PartialFunction[(Char, String), Option[String]] = {
+  val singleLineReply: SingleReply = {
     case (SINGLE, s) => Some(s)
     case (INT, s) => Some(s)
   }
 
-  val bulkReply: PartialFunction[(Char, String), Option[String]] = {
+  val bulkReply: SingleReply = {
     case (BULK, s) => 
-      Integer.parseInt(s) match {
+      Parsers.parseInt(s) match {
         case -1 => None
         case l => {
           val str = readCounted(l)
@@ -77,65 +66,76 @@ private [redis] trait Reply {
       }
   }
 
-  val multiBulkReply: PartialFunction[(Char, String), Option[List[Option[String]]]] = {
+  val multiBulkReply: MultiReply = {
     case (MULTI, str) =>
-      Integer.parseInt(str) match {
+      Parsers.parseInt(str) match {
         case -1 => None
         case n => Some(List.fill(n)(receive(bulkReply orElse singleLineReply)))
       }
   }
 
-  val execReply: PartialFunction[(Char, String), Option[List[Option[Any]]]] = {
+  val execReply: PartialFunction[(Char, Array[Byte]), Option[List[Option[Any]]]] = {
     case (MULTI, str) =>
-      Integer.parseInt(str) match {
+      Parsers.parseInt(str) match {
         case -1 => None
         case n => 
-          var l = List[Option[Any]]()
-          (1 to n).foreach {i =>
-            l = l ::: List(receive(integerReply orElse singleLineReply orElse bulkReply orElse multiBulkReply))
-          }
-          Some(l)
+          Some(List.fill(n)(receive(integerReply orElse singleLineReply orElse bulkReply orElse multiBulkReply)))
       }
   }
 
-  val errReply: PartialFunction[(Char, String), Nothing] = {
-    case (ERR, s) => reconnect; throw new Exception(s)
+  val errReply: Reply[Nothing] = {
+    case (ERR, s) => reconnect; throw new Exception(Parsers.parseString(s))
     case x => reconnect; throw new Exception("Protocol error: Got " + x + " as initial reply byte")
   }
 
-  def queuedReplyInt: PartialFunction[(Char, String), Option[Int]] = {
+  def queuedReplyInt: Reply[Option[Int]] = {
     case (SINGLE, QUEUED) => Some(Int.MaxValue)
   }
 
-  def queuedReplyList: PartialFunction[(Char, String), Option[List[Option[String]]]] = {
+  def queuedReplyList: MultiReply = {
     case (SINGLE, QUEUED) => Some(List(Some(QUEUED)))
   }
 
-  def receive[T](pf: PartialFunction[(Char, String), T]): T = readLine match {
+  def receive[T](pf: Reply[T]): T = readLine match {
     case null =>
       throw new RedisConnectionException("Connection dropped ..")
     case line =>
-      (pf orElse errReply) apply ((line(0), line.substring(1, line.length)))
+      (pf orElse errReply) apply ((line(0).toChar,line.slice(1,line.length)))
   }
 }
 
 private [redis] trait R extends Reply {
-  def asString = receive(singleLineReply orElse bulkReply)
-  
-  def asInt = receive(integerReply orElse queuedReplyInt)
+  def asString: Option[String] = receive(singleLineReply) map Parsers.parseString
 
-  def asBoolean = receive(integerReply orElse singleLineReply) match {
+  def asBulk[T](implicit parse: Parse[T]): Option[T] = receive(bulkReply) map parse
+  
+  def asInt: Option[Int] = receive(integerReply orElse queuedReplyInt)
+
+  def asBoolean: Boolean = receive(integerReply orElse singleLineReply) match {
     case Some(n: Int) => n > 0
-    case Some(s: String) => s == OK || s == QUEUED
+    case Some(s: Array[Byte]) => Parsers.parseString(s) match {
+      case "OK" => true
+      case "QUEUED" => true
+      case _ => false
+    }
     case _ => false
   }
 
-  def asList = receive(multiBulkReply orElse queuedReplyList)
+  def asList[T](implicit parse: Parse[T]): Option[List[Option[T]]] = receive(multiBulkReply).map(_.map(_.map(parse)))
+
+  def asListPairs[A,B](implicit parseA: Parse[A], parseB: Parse[B]): Option[List[Option[(A,B)]]] =
+    receive(multiBulkReply).map(_.grouped(2).flatMap{
+      case List(Some(a), Some(b)) => Iterator.single(Some((parseA(a), parseB(b))))
+      case _ => Iterator.single(None)
+    }.toList)
+
+  def asQueuedList: Option[List[Option[String]]] = receive(queuedReplyList).map(_.map(_.map(Parsers.parseString)))
+
   def asExec = receive(execReply)
 
-  def asSet = asList map (l => Set(l: _*))
+  def asSet[T: Parse]: Option[Set[Option[T]]] = asList map (_.toSet)
 
   def asAny = receive(integerReply orElse singleLineReply orElse bulkReply orElse multiBulkReply)
 }
 
-trait Protocol extends C with R
+trait Protocol extends R

@@ -1,4 +1,4 @@
-package com.redis.ds
+/*package com.redis.ds
 
 trait Deque[A] {
   // inserts at the head
@@ -88,3 +88,4 @@ class RedisDequeClient(val h: String, val p: Int) {
       connect
     }
 }
+*/

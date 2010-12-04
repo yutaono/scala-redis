@@ -16,7 +16,7 @@ class PoolSpec extends Spec
                with BeforeAndAfterEach
                with BeforeAndAfterAll {
 
-  val clients = new RedisClientPool("localhost", 6379)
+  val clients = new RedisClientPool("localhost", 16379)
 
   override def beforeEach = {
   }

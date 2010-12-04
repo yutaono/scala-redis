@@ -14,7 +14,7 @@ class ListOperationsSpec extends Spec
                          with BeforeAndAfterEach
                          with BeforeAndAfterAll {
 
-  val r = new RedisClient("localhost", 6379)
+  val r = new RedisClient("localhost", 16379)
 
   override def beforeEach = {
   }

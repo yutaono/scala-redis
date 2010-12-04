@@ -1,4 +1,4 @@
-package com.redis.ds
+/*package com.redis.ds
 
 import org.scalatest.Spec
 import org.scalatest.BeforeAndAfterEach
@@ -66,3 +66,4 @@ class BlockingDequeSpec extends Spec
     }
   }
 }
+*/

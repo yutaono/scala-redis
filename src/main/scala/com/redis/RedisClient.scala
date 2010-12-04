@@ -1,5 +1,7 @@
 package com.redis
 
+import serialization.Format
+
 object RedisClient {
   trait SortOrder
   case object ASC extends SortOrder
@@ -7,10 +9,12 @@ object RedisClient {
 }
 
 trait Redis extends IO with Protocol {
-  def send(command: String, key: String, values: String*) = snd(command, key, values:_*) { write }
-  def send(command: String) = snd(command) { write }
-  def cmd(command: String, key: String, values: String*) = MultiBulkCommand(command, key, values:_*).toString
-  def cmd(command: String) = InlineCommand(command).toString
+  def send(command: String, args: Seq[Any])(implicit format: Format): Unit = write(Commands.multiBulk(command.getBytes("UTF-8") +: (args map (format.apply))))
+  def send(command: String): Unit = write(Commands.multiBulk(List(command.getBytes("UTF-8"))))
+  def cmd(args: Seq[Array[Byte]]) = Commands.multiBulk(args)
+
+  protected def flattenPairs(in: Iterable[(Any, Any)]): List[Any] =
+    in.iterator.flatMap(x => Iterator(x._1, x._2)).toList
 }
 
 trait RedisCommand extends Redis
@@ -19,13 +23,13 @@ trait RedisCommand extends Redis
   with StringOperations
   with ListOperations
   with SetOperations
-  with SortedSetOperations
+  //with SortedSetOperations
   with HashOperations
   
 
 class RedisClient(override val host: String, override val port: Int)
   extends RedisCommand 
-  with PubSub {
+  /*with PubSub*/ {
 
   connect
 

@@ -1,4 +1,4 @@
-package com.redis.cluster
+/*package com.redis.cluster
 
 import java.util.zip.CRC32
 import scala.collection.immutable.TreeSet
@@ -295,3 +295,4 @@ abstract class RedisCluster(hosts: String*) extends RedisClient {
   override def hvals(key: String) = nodeForKey(key).hvals(key)
   override def hgetall(key: String) = nodeForKey(key).hgetall(key)
 }
+*/

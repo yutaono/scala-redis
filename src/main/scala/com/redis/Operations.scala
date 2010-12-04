@@ -1,34 +1,34 @@
 package com.redis
 
+import serialization._
+
 trait Operations { self: Redis =>
 
   // KEYS
   // returns all the keys matching the glob-style pattern.
-  def keys(pattern: String): Option[List[Option[String]]] = {
-    send("KEYS", pattern)
+  def keys[A](pattern: Any = "*")(implicit format: Format, parse: Parse[A]): Option[List[Option[A]]] = {
+    send("KEYS", List(pattern))
     asList
   }
 
   // RANDKEY
   // return a randomly selected key from the currently selected DB.
-  def randkey: Option[String] = {
+  def randkey[A](implicit parse: Parse[A]): Option[A] = {
     send("RANDOMKEY")
-    asString
+    asBulk
   }
 
-  @deprecated("use randkey") def randomKey = randkey
-  
   // RENAME (oldkey, newkey)
   // atomically renames the key oldkey to newkey.
-  def rename(oldkey: String, newkey: String): Boolean = {
-    send("RENAME", oldkey, newkey)
+  def rename(oldkey: Any, newkey: Any)(implicit format: Format): Boolean = {
+    send("RENAME", List(oldkey, newkey))
     asBoolean
   }
   
   // RENAMENX (oldkey, newkey)
   // rename oldkey into newkey but fails if the destination key newkey already exists.
-  def renamenx(oldkey: String, newkey: String): Boolean = {
-    send("RENAMENX", oldkey, newkey)
+  def renamenx(oldkey: Any, newkey: Any)(implicit format: Format): Boolean = {
+    send("RENAMENX", List(oldkey, newkey))
     asBoolean
   }
   
@@ -39,41 +39,38 @@ trait Operations { self: Redis =>
     asInt
   }
 
-  @deprecated("use dbsize") def dbSize = dbsize 
-
   // EXISTS (key)
   // test if the specified key exists.
-  def exists(key: String): Boolean = {
-    send("EXISTS", key)
+  def exists(key: Any)(implicit format: Format): Boolean = {
+    send("EXISTS", List(key))
     asBoolean
   }
 
   // DELETE (key1 key2 ..)
   // deletes the specified keys.
-  def del(key: String, keys: String*): Option[Int] = {
-    send("DEL", key, keys: _*)
+  def del(key: Any, keys: Any*)(implicit format: Format): Option[Int] = {
+    send("DEL", key :: keys.toList)
     asInt
   }
 
-  @deprecated("use del") def delete(key: String, keys: String*) = del(key, keys: _*)
   // TYPE (key)
   // return the type of the value stored at key in form of a string.
-  def getType(key: String): Option[String] = {
-    send("TYPE", key)
+  def getType(key: Any)(implicit format: Format): Option[String] = {
+    send("TYPE", List(key))
     asString
   }
 
   // EXPIRE (key, expiry)
   // sets the expire time (in sec.) for the specified key.
-  def expire(key: String, expiry: Int): Boolean = {
-    send("EXPIRE", key, String.valueOf(expiry))
+  def expire(key: Any, expiry: Int)(implicit format: Format): Boolean = {
+    send("EXPIRE", List(key, expiry))
     asBoolean
   }
 
   // SELECT (index)
   // selects the DB to connect, defaults to 0 (zero).
   def select(index: Int): Boolean = {
-    send("SELECT", String.valueOf(index))
+    send("SELECT", List(index))
     asBoolean match {
       case true => {
         db = index
@@ -82,8 +79,6 @@ trait Operations { self: Redis =>
       case _ => false
     }
   }
-
-  @deprecated("use selectdb") def selectDb(index: Int) = select(index)
   
   // FLUSHDB the DB
   // removes all the DB data.
@@ -91,8 +86,6 @@ trait Operations { self: Redis =>
     send("FLUSHDB")
     asBoolean
   }
-  
-  @deprecated("use flushdb") def flushDb = flushdb
 
   // FLUSHALL the DB's
   // removes data from all the DB's.
@@ -101,12 +94,10 @@ trait Operations { self: Redis =>
     asBoolean
   }
 
-  def flushAll = flushall
-
   // MOVE
   // Move the specified key from the currently selected DB to the specified destination DB.
-  def move(key: String, db: Int) = {
-    send("MOVE", key, String.valueOf(db))
+  def move(key: Any, db: Int)(implicit format: Format): Boolean = {
+    send("MOVE", List(key, db))
     asBoolean
   }
   
@@ -119,8 +110,8 @@ trait Operations { self: Redis =>
   
   // AUTH
   // auths with the server.
-  def auth(secret: String): Boolean = {
-    send("AUTH", secret)
+  def auth(secret: Any)(implicit format: Format): Boolean = {
+    send("AUTH", List(secret))
     asBoolean
   }
 }

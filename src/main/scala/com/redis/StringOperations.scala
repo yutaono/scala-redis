@@ -1,96 +1,83 @@
 package com.redis
 
+import serialization._
+
 trait StringOperations { self: Redis =>
 
   // SET KEY (key, value)
   // sets the key with the specified value.
-  def set(key: String, value: String): Boolean = {
-    send("SET", key, value)
+  def set(key: Any, value: Any)(implicit format: Format): Boolean = {
+    send("SET", List(key, value))
     asBoolean
   }
 
   // GET (key)
   // gets the value for the specified key.
-  def get(key: String): Option[String] = {
-    send("GET", key)
-    asString
+  def get[A](key: Any)(implicit format: Format, parse: Parse[A]): Option[A] = {
+    send("GET", List(key))
+    asBulk
   }
   
   // GETSET (key, value)
   // is an atomic set this value and return the old value command.
-  def getset(key: String, value: String): Option[String] = {
-    send("GETSET", key, value)
-    asString
+  def getset[A](key: Any, value: Any)(implicit format: Format, parse: Parse[A]): Option[A] = {
+    send("GETSET", List(key, value))
+    asBulk
   }
-
-  @deprecated("use getset") def getSet(key: String, value: String) = getset(key, value)
   
   // SETNX (key, value)
   // sets the value for the specified key, only if the key is not there.
-  def setnx(key: String, value: String): Boolean = {
-    send("SETNX", key, value)
+  def setnx(key: Any, value: Any)(implicit format: Format): Boolean = {
+    send("SETNX", List(key, value))
     asBoolean
   }
 
-  @deprecated("use setnx") def setUnlessExists(key: String, value: String) = setnx(key, value)
-
   // INCR (key)
   // increments the specified key by 1
-  def incr(key: String): Option[Int] = {
-    send("INCR", key)
+  def incr(key: Any)(implicit format: Format): Option[Int] = {
+    send("INCR", List(key))
     asInt
   }
 
   // INCR (key, increment)
   // increments the specified key by increment
-  def incrby(key: String, increment: Int): Option[Int] = {
-    send("INCRBY", key, String.valueOf(increment))
+  def incrby(key: Any, increment: Int)(implicit format: Format): Option[Int] = {
+    send("INCRBY", List(key, increment))
     asInt
   }
 
-  @deprecated("use incrby") def incrBy(key: String, increment: Int) = incrby(key, increment)
-
   // DECR (key)
   // decrements the specified key by 1
-  def decr(key: String): Option[Int] = {
-    send("DECR", key)
+  def decr(key: Any)(implicit format: Format): Option[Int] = {
+    send("DECR", List(key))
     asInt
   }
 
   // DECR (key, increment)
   // decrements the specified key by increment
-  def decrby(key: String, increment: Int): Option[Int] = {
-    send("DECRBY", key, String.valueOf(increment))
+  def decrby(key: Any, increment: Int)(implicit format: Format): Option[Int] = {
+    send("DECRBY", List(key, increment))
     asInt
   }
 
-  @deprecated("use decrby") def decrBy(key: String, increment: Int) = decrby(key, increment)
-
   // MGET (key, key, key, ...)
   // get the values of all the specified keys.
-  def mget(key: String, keys: String*) = {
-    send("MGET", key, keys: _*)
+  def mget[A](key: Any, keys: Any*)(implicit format: Format, parse: Parse[A]) = {
+    send("MGET", key :: keys.toList)
     asList
   }
 
   // MSET (key1 value1 key2 value2 ..)
   // set the respective key value pairs. Overwrite value if key exists
-  def mset(kvs: (String, String)*) = {
-    msetImpl("MSET", kvs: _*)
+  def mset(kvs: (Any, Any)*)(implicit format: Format) = {
+    send("MSET", kvs.foldRight(List[Any]()){ case ((k,v),l) => k :: v :: l })
+    asBoolean
   }
 
   // MSETNX (key1 value1 key2 value2 ..)
   // set the respective key value pairs. Noop if any key exists
-  def msetnx(kvs: (String, String)*) = {
-    msetImpl("MSETNX", kvs: _*)
-  }
-
-  @deprecated("use msetnx") def msetUnlessExists(kvs: (String, String)*) = msetnx(kvs: _*)
-
-  private def msetImpl(command: String, kvs: (String, String)*) = {
-    var l: List[String] = List()
-    kvs.toList.foreach {case (k, v) => l = l ::: List(k, v)}
-    send(command, l.head, l.tail: _*)
+  def msetnx(kvs: (Any, Any)*)(implicit format: Format) = {
+    send("MSET", kvs.foldRight(List[Any]()){ case ((k,v),l) => k :: v :: l })
     asBoolean
   }
 }

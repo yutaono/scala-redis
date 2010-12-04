@@ -1,4 +1,4 @@
-package com.redis
+/*package com.redis
 
 import org.scalatest.Spec
 import org.scalatest.BeforeAndAfterEach
@@ -14,7 +14,7 @@ class SortedSetOperationsSpec extends Spec
                         with BeforeAndAfterEach
                         with BeforeAndAfterAll {
 
-  val r = new RedisClient("localhost", 6379)
+  val r = new RedisClient("localhost", 16379)
 
   override def beforeEach = {
   }
@@ -99,3 +99,4 @@ class SortedSetOperationsSpec extends Spec
     }
   }
 }
+*/

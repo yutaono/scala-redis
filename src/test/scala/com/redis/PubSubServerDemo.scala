@@ -1,4 +1,4 @@
-package com.redis
+/*package com.redis
 
 object Pub {
   println("starting publishing service ..")
@@ -56,3 +56,4 @@ object Sub {
       }
   }
 }
+*/

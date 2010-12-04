@@ -14,7 +14,7 @@ class StringOperationsSpec extends Spec
                            with BeforeAndAfterEach
                            with BeforeAndAfterAll {
 
-  val r = new RedisClient("localhost", 6379)
+  val r = new RedisClient("localhost", 16379)
 
   override def beforeEach = {
   }
@@ -85,7 +85,7 @@ class StringOperationsSpec extends Spec
       r.set("anshin-2", "debasish") should equal(true)
       try {
         r.incr("anshin-2")
-      } catch { case ex => ex.getMessage should equal("ERR value is not an integer") }
+      } catch { case ex => ex.getMessage should startWith("ERR value is not an integer") }
     }
     it("should increment by 5 for a key that contains a number") {
       r.set("anshin-3", "10") should equal(true)
@@ -95,7 +95,7 @@ class StringOperationsSpec extends Spec
       r.set("anshin-4", "debasish") should equal(true)
       try {
         r.incrby("anshin-4", 5)
-      } catch { case ex => ex.getMessage should equal("ERR value is not an integer") }
+      } catch { case ex => ex.getMessage should startWith("ERR value is not an integer") }
     }
   }
 
@@ -108,7 +108,7 @@ class StringOperationsSpec extends Spec
       r.set("anshin-2", "debasish") should equal(true)
       try {
         r.decr("anshin-2")
-      } catch { case ex => ex.getMessage should equal("ERR value is not an integer") }
+      } catch { case ex => ex.getMessage should startWith("ERR value is not an integer") }
     }
     it("should decrement by 5 for a key that contains a number") {
       r.set("anshin-3", "10") should equal(true)
@@ -118,7 +118,7 @@ class StringOperationsSpec extends Spec
       r.set("anshin-4", "debasish") should equal(true)
       try {
         r.decrby("anshin-4", 5)
-      } catch { case ex => ex.getMessage should equal("ERR value is not an integer") }
+      } catch { case ex => ex.getMessage should startWith("ERR value is not an integer") }
     }
   }
 

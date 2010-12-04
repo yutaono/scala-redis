@@ -1,4 +1,4 @@
-package com.redis
+/*package com.redis
 
 import org.scalatest.Spec
 import org.scalatest.BeforeAndAfterEach
@@ -67,3 +67,4 @@ class PubSubSpec extends Spec
     }
   }
 }
+*/

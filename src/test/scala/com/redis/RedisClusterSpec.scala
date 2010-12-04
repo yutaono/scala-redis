@@ -1,4 +1,4 @@
-package com.redis.cluster
+/*package com.redis.cluster
 
 import org.scalatest.Spec
 import org.scalatest.BeforeAndAfterEach
@@ -108,3 +108,4 @@ class RedisClusterSpec extends Spec
     }
   }
 }
+*/
