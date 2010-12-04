@@ -1,4 +1,4 @@
-/*package com.redis.ds
+package com.redis.ds
 
 trait Deque[A] {
   // inserts at the head
@@ -33,42 +33,38 @@ trait Deque[A] {
 }
 
 import com.redis.ListOperations
+import com.redis.serialization._
+import Parse.Implicits._
 
-abstract class RedisDeque(val blocking: Boolean = false, val timeoutInSecs: Int = 0)
-  extends Deque[String] { self: ListOperations =>
+abstract class RedisDeque[A](val blocking: Boolean = false, val timeoutInSecs: Int = 0)(implicit private val format: Format, private val parse: Parse[A])
+  extends Deque[A] { self: ListOperations =>
 
   val key: String
 
-  def addFirst(a: String) = lpush(key, a) 
-  def addLast(a: String) = rpush(key, a)
+  def addFirst(a: A): Option[Int] = lpush(key, a) 
+  def addLast(a: A): Option[Int] = rpush(key, a)
 
-  def peekFirst = lrange(key, 0, 0).map(_.head.get) 
+  def peekFirst: Option[A] = lrange[A](key, 0, 0).map(_.head.get) 
 
-  def peekLast = lrange(key, -1, -1).map(_.head.get) 
+  def peekLast: Option[A] = lrange[A](key, -1, -1).map(_.head.get) 
 
   def poll =
     if (blocking == true) {
-      blpop(timeoutInSecs, key) match {
-        case Some(maybeKey :: maybeValue :: Nil) => maybeValue
-        case _ => None
-      }
-    } else lpop(key) 
+      blpop[String, A](timeoutInSecs, key).map(_._2)
+    } else lpop[A](key)
 
-  def pollFirst = poll
+  def pollFirst: Option[A] = poll
 
-  def pollLast =
+  def pollLast: Option[A] =
     if (blocking == true) {
-      brpop(timeoutInSecs, key) match {
-        case Some(maybeKey :: maybeValue :: Nil) => maybeValue
-        case _ => None
-      }
-    } else rpop(key) 
+      brpop[String, A](timeoutInSecs, key).map(_._2)
+    } else rpop[A](key) 
 
-  def size = llen(key) getOrElse(0)
+  def size: Int = llen(key) getOrElse(0)
 
-  def isEmpty = size == 0
+  def isEmpty: Boolean = size == 0
 
-  def clear = size match {
+  def clear: Boolean = size match {
     case 0 => true
     case 1 => 
       val n = poll
@@ -80,12 +76,11 @@ abstract class RedisDeque(val blocking: Boolean = false, val timeoutInSecs: Int 
 import com.redis.{Redis, ListOperations}
 
 class RedisDequeClient(val h: String, val p: Int) {
-  def getDeque(k: String, blocking: Boolean = false, timeoutInSecs: Int = 0) =
-    new RedisDeque(blocking, timeoutInSecs) with ListOperations with Redis {
+  def getDeque[A](k: String, blocking: Boolean = false, timeoutInSecs: Int = 0)(implicit format: Format, parse: Parse[A]) =
+    new RedisDeque(blocking, timeoutInSecs)(format, parse) with ListOperations with Redis {
       val host = h
       val port = p
       val key = k
       connect
     }
 }
-*/

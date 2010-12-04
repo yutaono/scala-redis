@@ -1,4 +1,4 @@
-/*package com.redis.ds
+package com.redis.ds
 
 import org.scalatest.Spec
 import org.scalatest.BeforeAndAfterEach
@@ -14,7 +14,7 @@ class DequeSpec extends Spec
                 with BeforeAndAfterEach
                 with BeforeAndAfterAll {
 
-  val r = new RedisDequeClient("localhost", 6379).getDeque("td")
+  val r = new RedisDequeClient("localhost", 16379).getDeque("td")
 
   override def beforeEach = {
     r.clear
@@ -75,4 +75,3 @@ class DequeSpec extends Spec
     }
   }
 }
-*/
