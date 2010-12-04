@@ -75,12 +75,13 @@ private [redis] trait Reply {
       }
   }
 
-  val execReply: PartialFunction[(Char, Array[Byte]), Option[List[Option[Any]]]] = {
+  def execReply(handlers: Seq[() => Any]): PartialFunction[(Char, Array[Byte]), Option[List[Any]]] = {
     case (MULTI, str) =>
       Parsers.parseInt(str) match {
         case -1 => None
-        case n => 
-          Some(List.fill(n)(receive(integerReply orElse singleLineReply orElse bulkReply orElse multiBulkReply)))
+        case n if n == handlers.size => 
+          Some(handlers.map(_.apply).toList)
+        case n => throw new Exception("Protocol error: Expected "+handlers.size+" results, but got "+n)
       }
   }
 
@@ -108,9 +109,9 @@ private [redis] trait Reply {
 private [redis] trait R extends Reply {
   def asString: Option[String] = receive(singleLineReply) map Parsers.parseString
 
-  def asBulk[T](implicit parse: Parse[T]): Option[T] = receive(bulkReply) map parse
+  def asBulk[T](implicit parse: Parse[T]): Option[T] =  receive(bulkReply) map parse
   
-  def asInt: Option[Int] = receive(integerReply orElse queuedReplyInt)
+  def asInt: Option[Int] =  receive(integerReply orElse queuedReplyInt)
 
   def asBoolean: Boolean = receive(integerReply orElse singleLineReply) match {
     case Some(n: Int) => n > 0
@@ -132,7 +133,7 @@ private [redis] trait R extends Reply {
 
   def asQueuedList: Option[List[Option[String]]] = receive(queuedReplyList).map(_.map(_.map(Parsers.parseString)))
 
-  def asExec = receive(execReply)
+  def asExec(handlers: Seq[() => Any]): Option[List[Any]] = receive(execReply(handlers))
 
   def asSet[T: Parse]: Option[Set[Option[T]]] = asList map (_.toSet)
 
