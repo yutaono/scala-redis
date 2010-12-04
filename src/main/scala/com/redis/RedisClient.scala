@@ -6,6 +6,11 @@ object RedisClient {
   trait SortOrder
   case object ASC extends SortOrder
   case object DESC extends SortOrder
+
+  trait Aggregate
+  case object SUM extends Aggregate
+  case object MIN extends Aggregate
+  case object MAX extends Aggregate
 }
 
 trait Redis extends IO with Protocol {
@@ -23,7 +28,7 @@ trait RedisCommand extends Redis
   with StringOperations
   with ListOperations
   with SetOperations
-  //with SortedSetOperations
+  with SortedSetOperations
   with HashOperations
   
 

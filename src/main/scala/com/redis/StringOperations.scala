@@ -77,7 +77,7 @@ trait StringOperations { self: Redis =>
   // MSETNX (key1 value1 key2 value2 ..)
   // set the respective key value pairs. Noop if any key exists
   def msetnx(kvs: (Any, Any)*)(implicit format: Format) = {
-    send("MSET", kvs.foldRight(List[Any]()){ case ((k,v),l) => k :: v :: l })
+    send("MSETNX", kvs.foldRight(List[Any]()){ case ((k,v),l) => k :: v :: l })
     asBoolean
   }
 }

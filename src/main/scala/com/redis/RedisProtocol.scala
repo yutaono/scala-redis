@@ -47,6 +47,7 @@ private [redis] trait Reply {
 
   val integerReply: Reply[Option[Int]] = {
     case (INT, s) => Some(Parsers.parseInt(s))
+    case (BULK, s) if Parsers.parseInt(s) == -1 => None
   }
 
   val singleLineReply: SingleReply = {
