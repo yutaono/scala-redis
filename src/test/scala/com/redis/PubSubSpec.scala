@@ -14,8 +14,8 @@ class PubSubSpec extends Spec
                  with BeforeAndAfterEach
                  with BeforeAndAfterAll {
 
-  val r = new RedisClient("localhost", 16379)
-  val t = new RedisClient("localhost", 16379)
+  val r = new RedisClient("localhost", 6379)
+  val t = new RedisClient("localhost", 6379)
 
   override def afterAll = {
     // r.disconnect

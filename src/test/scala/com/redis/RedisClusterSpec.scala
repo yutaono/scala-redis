@@ -14,7 +14,7 @@ class RedisClusterSpec extends Spec
                        with BeforeAndAfterEach
                        with BeforeAndAfterAll {
 
-  val r = new RedisCluster("localhost:16379", "localhost:16380", "localhost:16381") {
+  val r = new RedisCluster("localhost:6379", "localhost:6380", "localhost:6381") {
     val keyTag = Some(RegexKeyTag)
   }
 
@@ -29,7 +29,7 @@ class RedisClusterSpec extends Spec
       val l = List("debasish", "maulindu", "ramanendu", "nilanjan", "tarun", "tarun", "tarun")
 
       // last 3 should map to the same node
-      l.map(r.nodeForKey(_)).reverse.slice(0, 3).forall(_.toString == "localhost:16381") should equal(true)
+      l.map(r.nodeForKey(_)).reverse.slice(0, 3).forall(_.toString == "localhost:6381") should equal(true)
 
       // set
       l foreach (s => r.nodeForKey(s).set(s, "working in anshin") should equal(true))
