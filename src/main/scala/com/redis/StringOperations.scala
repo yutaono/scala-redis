@@ -46,7 +46,7 @@ trait StringOperations { self: Redis =>
 
   // MGET (key, key, key, ...)
   // get the values of all the specified keys.
-  def mget[A](key: Any, keys: Any*)(implicit format: Format, parse: Parse[A]) =
+  def mget[A](key: Any, keys: Any*)(implicit format: Format, parse: Parse[A]): Option[List[Option[A]]] =
     send("MGET", key :: keys.toList)(asList)
 
   // MSET (key1 value1 key2 value2 ..)

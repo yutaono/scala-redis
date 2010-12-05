@@ -1,4 +1,4 @@
-/*package com.redis.cluster
+package com.redis.cluster
 
 import org.scalatest.Spec
 import org.scalatest.BeforeAndAfterEach
@@ -14,7 +14,7 @@ class RedisClusterSpec extends Spec
                        with BeforeAndAfterEach
                        with BeforeAndAfterAll {
 
-  val r = new RedisCluster("localhost:6379", "localhost:6380", "localhost:6381") {
+  val r = new RedisCluster("localhost:16379", "localhost:16380", "localhost:16381") {
     val keyTag = Some(RegexKeyTag)
   }
 
@@ -29,7 +29,7 @@ class RedisClusterSpec extends Spec
       val l = List("debasish", "maulindu", "ramanendu", "nilanjan", "tarun", "tarun", "tarun")
 
       // last 3 should map to the same node
-      l.map(r.nodeForKey(_)).reverse.slice(0, 3).forall(_.toString == "localhost:6381") should equal(true)
+      l.map(r.nodeForKey(_)).reverse.slice(0, 3).forall(_.toString == "localhost:16381") should equal(true)
 
       // set
       l.foreach{s =>
@@ -71,7 +71,7 @@ class RedisClusterSpec extends Spec
 
       r.del("debasish", "nilanjan").get should equal(2)
       r.dbsize.get should equal(3)
-      r.del("satire").isDefined should equal(false)
+      r.del("satire").get should equal(0)
     }
 
     it("mget on a cluster should fetch values in the same order as the keys") {
@@ -108,4 +108,3 @@ class RedisClusterSpec extends Spec
     }
   }
 }
-*/
