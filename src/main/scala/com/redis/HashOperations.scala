@@ -9,7 +9,7 @@ trait HashOperations { self: Redis =>
   def hget[A](key : Any, field : Any)(implicit format: Format, parse: Parse[A]) : Option[A] =
     send("HGET", List(key, field))(asBulk)
   
-  def hmset(key : Any, map : Map[Any,Any])(implicit format: Format) : Boolean =
+  def hmset(key : Any, map : Iterable[Product2[Any,Any]])(implicit format: Format) : Boolean =
     send("HMSET", key :: flattenPairs(map))(asBoolean)
   
   def hmget[K,V](key: Any, fields: K*)(implicit format: Format, parseV: Parse[V]): Option[Map[K,V]] =

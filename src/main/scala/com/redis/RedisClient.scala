@@ -24,7 +24,7 @@ trait Redis extends IO with Protocol {
   }
   def cmd(args: Seq[Array[Byte]]) = Commands.multiBulk(args)
 
-  protected def flattenPairs(in: Iterable[(Any, Any)]): List[Any] =
+  protected def flattenPairs(in: Iterable[Product2[Any, Any]]): List[Any] =
     in.iterator.flatMap(x => Iterator(x._1, x._2)).toList
 }
 
