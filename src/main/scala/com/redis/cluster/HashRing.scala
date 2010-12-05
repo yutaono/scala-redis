@@ -15,7 +15,7 @@ case class HashRing[T](nodes: List[T], replicas: Int) {
   def addNode(node: T) = {
     cluster += node
     (1 to replicas).foreach {replica =>
-      val key = calculateChecksum(node + ":" + replica)
+      val key = calculateChecksum((node + ":" + replica).getBytes("UTF-8"))
       ring += (key -> node)
       sortedKeys = sortedKeys + key
     }
@@ -25,14 +25,14 @@ case class HashRing[T](nodes: List[T], replicas: Int) {
   def removeNode(node: T) {
     cluster -= node
     (1 to replicas).foreach {replica =>
-      val key = calculateChecksum(node + ":" + replica)
+      val key = calculateChecksum((node + ":" + replica).getBytes("UTF-8"))
       ring -= key
       sortedKeys = sortedKeys - key
     }
   }
 
   // get node for the key
-  def getNode(key: String): T = {
+  def getNode(key: Seq[Byte]): T = {
     val crc = calculateChecksum(key)
     if (sortedKeys contains crc) ring(crc)
     else {
@@ -43,9 +43,9 @@ case class HashRing[T](nodes: List[T], replicas: Int) {
   }
 
   // Computes the CRC-32 of the given String
-  def calculateChecksum(value: String): Long = {
+  def calculateChecksum(value: Seq[Byte]): Long = {
     val checksum = new CRC32
-    checksum.update(value.getBytes)
+    checksum.update(value.toArray)
     checksum.getValue
   }
 }

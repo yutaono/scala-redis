@@ -32,10 +32,7 @@ class RedisClusterSpec extends Spec
       l.map(r.nodeForKey(_)).reverse.slice(0, 3).forall(_.toString == "localhost:16381") should equal(true)
 
       // set
-      l.foreach{s =>
-        val n = r.nodeForKey(s)
-        r.set(s, "working in anshin") should equal(true)
-      }
+      l foreach (s => r.nodeForKey(s).set(s, "working in anshin") should equal(true))
 
       // check get: should return all 5
       r.keys("*").get.size should equal(5)
@@ -45,10 +42,7 @@ class RedisClusterSpec extends Spec
       val l = List("debasish", "maulindu", "ramanendu", "nilanjan", "tarun", "tarun", "tarun")
 
       // set
-      l.foreach {s =>
-        val n = r.nodeForKey(s)
-        r.set(s, s + " is working in anshin") should equal(true)
-      }
+      l foreach (s =>  r.nodeForKey(s).set(s, s + " is working in anshin") should equal(true))
 
       r.get("debasish").get should equal("debasish is working in anshin")
       r.get("maulindu").get should equal("maulindu is working in anshin")
@@ -59,10 +53,7 @@ class RedisClusterSpec extends Spec
       val l = List("debasish", "maulindu", "ramanendu", "nilanjan", "tarun", "tarun", "tarun")
 
       // set
-      l.foreach {s =>
-        val n = r.nodeForKey(s)
-        r.set(s, s + " is working in anshin") should equal(true)
-      }
+      l foreach (s => r.nodeForKey(s).set(s, s + " is working in anshin") should equal(true))
 
       r.dbsize.get should equal(5)
       r.exists("debasish") should equal(true)
@@ -78,10 +69,7 @@ class RedisClusterSpec extends Spec
       val l = List("debasish", "maulindu", "ramanendu", "nilanjan", "tarun", "tarun", "tarun")
 
       // set
-      l.foreach {s =>
-        val n = r.nodeForKey(s)
-        r.set(s, s + " is working in anshin") should equal(true)
-      }
+      l foreach (s => r.nodeForKey(s).set(s, s + " is working in anshin") should equal(true))
 
       // mget
       r.mget(l.head, l.tail: _*).get.map(_.get.split(" ")(0)) should equal(l)

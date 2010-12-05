@@ -34,19 +34,26 @@ import serialization._
  * </i>
  */
 trait KeyTag {
-  def tag(key: String): Option[String]
+  def tag(key: Seq[Byte]): Option[Seq[Byte]]
 }
 
 import scala.util.matching.Regex
 object RegexKeyTag extends KeyTag {
-  def tag(key: String) = {
-    val t = """\{(.*)?\}""".r
-    t.findFirstIn(key)
+
+  val tagStart = '{'.toByte
+  val tagEnd = '}'.toByte
+
+  def tag(key: Seq[Byte]) = {
+    val start = key.indexOf(tagStart) + 1
+    if (start > 0) {
+      val end = key.indexOf(tagEnd, start)
+      if (end > -1) Some(key.slice(start,end)) else None
+    } else None
   }
 }
 
 object NoOpKeyTag extends KeyTag {
-  def tag(key: String) = Some(key)
+  def tag(key: Seq[Byte]) = Some(key)
 }
 
 abstract class RedisCluster(hosts: String*) extends RedisClient {
@@ -70,19 +77,10 @@ abstract class RedisCluster(hosts: String*) extends RedisClient {
   // the hash ring will instantiate with the nodes up and added
   val hr = HashRing[RedisClientPool](clients, POINTS_PER_SERVER)
 
-  def key2String(key: Any)(implicit format: Format): String =
-    (if (format.format.isDefinedAt(key)) format.format(key) else key) match {
-      case b: Array[Byte] => Parse.parseDefault(b)
-      case x => x.toString
-    }
-
   // get node for the key
   def nodeForKey(key: Any)(implicit format: Format) = {
-    val keyStr = key2String(key)
-    keyTag.get.tag(keyStr) match {
-      case Some(s) => hr.getNode(s).withClient { client => client }
-      case None => hr.getNode(keyStr).withClient { client => client }
-    }
+    val bKey = format(key)
+    hr.getNode(keyTag.flatMap(_.tag(bKey)).getOrElse(bKey)).withClient { client => client }
   }
 
   // add a server
@@ -111,7 +109,7 @@ abstract class RedisCluster(hosts: String*) extends RedisClient {
     Some(onAllConns(_.dbsize).foldLeft(0)((a, b) => b.map(a+).getOrElse(a)))
   override def exists(key: Any)(implicit format: Format): Boolean = nodeForKey(key).exists(key)
   override def del(key: Any, keys: Any*)(implicit format: Format): Option[Int] =
-    Some((key :: keys.toList).groupBy(nodeForKey).foldLeft(0) { case (t,(n,k::ks)) => n.del(k,ks:_*).map(t+).getOrElse(t) })
+    Some((key :: keys.toList).groupBy(nodeForKey).foldLeft(0) { case (t,(n,ks)) => n.del(ks.head,ks.tail:_*).map(t+).getOrElse(t) })
   override def getType(key: Any)(implicit format: Format) = nodeForKey(key).getType(key)
   override def expire(key: Any, expiry: Int)(implicit format: Format) = nodeForKey(key).expire(key, expiry)
   override def select(index: Int) = throw new UnsupportedOperationException("not supported on a cluster")
