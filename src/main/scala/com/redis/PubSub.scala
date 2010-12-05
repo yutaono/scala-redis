@@ -1,4 +1,4 @@
-/*package com.redis
+package com.redis
 
 object Util {
   object Break extends RuntimeException;
@@ -54,27 +54,26 @@ trait PubSub { self: Redis =>
   def subscribe(channel: String, channels: String*)(fn: PubSubMessage => Any) {
     if (pubSub == true) { // already pubsub ing
       subscribeRaw(channel, channels: _*)
-      return
+    } else {
+      pubSub = true
+      subscribeRaw(channel, channels: _*)
+      new Consumer(fn).start
     }
-    pubSub = true
-    subscribeRaw(channel, channels: _*)
-    new Consumer(fn).start
   }
 
   def subscribeRaw(channel: String, channels: String*) {
-    send("SUBSCRIBE", channel, channels: _*)
+    send("SUBSCRIBE", channel :: channels.toList)(())
   }
 
   def unsubscribe = {
-    send("UNSUBSCRIBE")
+    send("UNSUBSCRIBE")(())
   }
 
   def unsubscribe(channel: String, channels: String*) = {
-    send("UNSUBSCRIBE", channel, channels: _*)
+    send("UNSUBSCRIBE", channel :: channels.toList)(())
   }
 
   def publish(channel: String, msg: String) = {
-    send("PUBLISH", channel, msg)
+    send("PUBLISH", List(channel, msg))(())
   }
 }
-*/

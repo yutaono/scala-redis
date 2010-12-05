@@ -1,8 +1,8 @@
-/*package com.redis
+package com.redis
 
 object Pub {
   println("starting publishing service ..")
-  val r = new RedisClient("localhost", 6379)
+  val r = new RedisClient("localhost", 16379)
   val p = new Publisher(r)
   p.start
 
@@ -13,7 +13,7 @@ object Pub {
 
 object Sub {
   println("starting subscription service ..")
-  val r = new RedisClient("localhost", 6379)
+  val r = new RedisClient("localhost", 16379)
   val s = new Subscriber(r)
   s.start
   s ! Register(callback) 
@@ -56,4 +56,3 @@ object Sub {
       }
   }
 }
-*/

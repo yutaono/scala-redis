@@ -39,8 +39,7 @@ trait RedisCommand extends Redis
   
 
 class RedisClient(override val host: String, override val port: Int)
-  extends RedisCommand 
-  /*with PubSub*/ {
+  extends RedisCommand with PubSub {
 
   connect
 
@@ -60,15 +59,7 @@ class RedisClient(override val host: String, override val port: Int)
     }
   }
 
-  class PipelineClient(parent: RedisClient) extends Redis
-    with Operations 
-    with NodeOperations 
-    with StringOperations
-    with ListOperations
-    with SetOperations
-    with SortedSetOperations
-    with HashOperations {
-
+  class PipelineClient(parent: RedisClient) extends RedisCommand {
     import serialization.Parse
 
     var handlers: Vector[() => Any] = Vector.empty
@@ -89,6 +80,7 @@ class RedisClient(override val host: String, override val port: Int)
     val host = parent.host
     val port = parent.port
 
+    // TODO: Find a better abstraction
     override def connected = parent.connected
     override def connect = parent.connect
     override def reconnect = parent.reconnect
