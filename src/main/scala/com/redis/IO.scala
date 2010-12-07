@@ -3,6 +3,8 @@ package com.redis
 import java.io._
 import java.net.Socket
 
+import serialization.Parse.parseStringSafe
+
 trait IO extends Log {
   val host: String
   val port: Int
@@ -61,7 +63,7 @@ trait IO extends Log {
 
   // Writes data to a socket using the specified block.
   def write(data: Array[Byte]) = {
-    debug("C: " + data)
+    ifDebug("C: " + parseStringSafe(data))
     if(!connected) connect;
     write_to_socket(data){ os =>
       try {

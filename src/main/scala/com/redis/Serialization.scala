@@ -41,6 +41,13 @@ object Parse {
   }
 
   implicit val parseDefault = Parse[String](new String(_, "UTF-8"))
+
+  val parseStringSafe = Parse[String](xs => new String(xs.iterator.flatMap{
+    case x if x > 31 && x < 127 => Iterator.single(x.toChar)
+    case 10 => "\\n".iterator
+    case 13 => "\\r".iterator
+    case x => "\\x%02x".format(x).iterator
+  }.toArray))
 }
 
 class Parse[A](val f: (Array[Byte]) => A) extends Function1[Array[Byte], A] {
