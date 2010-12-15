@@ -24,6 +24,9 @@ trait StringOperations { self: Redis =>
   def setnx(key: Any, value: Any)(implicit format: Format): Boolean =
     send("SETNX", List(key, value))(asBoolean)
 
+  def setex(key: Any, expiry: Int, value: Any): Boolean =
+    send("SETEX", List(key, expiry, value))(asBoolean) 
+
   // INCR (key)
   // increments the specified key by 1
   def incr(key: Any)(implicit format: Format): Option[Int] =
