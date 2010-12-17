@@ -66,15 +66,15 @@ trait PubSub { self: Redis =>
   }
 
   def pSubscribeRaw(channel: String, channels: String*) {
-    send("PSUBSCRIBE", channel, channels: _*)
+    send("PSUBSCRIBE", channel :: channels.toList)(())
   }
 
   def pUnsubscribe = {
-    send("PUNSUBSCRIBE")
+    send("PUNSUBSCRIBE")(())
   }
 
   def pUnsubscribe(channel: String, channels: String*) = {
-    send("PUNSUBSCRIBE", channel, channels: _*)
+    send("PUNSUBSCRIBE", channel :: channels.toList)(())
   }
   def subscribe(channel: String, channels: String*)(fn: PubSubMessage => Any) {
     if (pubSub == true) { // already pubsub ing
