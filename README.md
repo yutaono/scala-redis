@@ -29,19 +29,18 @@ Start your redis instance (usually redis-server will do it)
     $ cd scala-redis
     $ sbt
     > update
-    > test (optional to run the tests)
     > console
 
 And you are ready to start issuing commands to the server(s)
 
 Redis 2 implements a new protocol for binary safe commands and replies
 
-let's connect and get a key:
+let us connect and get a key:
 
     scala> import com.redis._
-    scala> val r = new Redis("localhost", 6379)
-    scala> val r.set("key", "some value")
-    scala> val r.get("key")
+    scala> val r = new RedisClient("localhost", 6379)
+    scala> r.set("key", "some value")
+    scala> r.get("key")
 
 ## License
 
