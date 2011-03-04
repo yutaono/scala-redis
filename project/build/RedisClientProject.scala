@@ -22,6 +22,8 @@ class RedisClientProject(info: ProjectInfo) extends DefaultProject(info)
         "org.scalatest" % "scalatest" % "1.2-for-scala-2.8.0.final-SNAPSHOT" % "test"
       case "2.8.1" =>
         "org.scalatest" % "scalatest" % "1.2-for-scala-2.8.0.final-SNAPSHOT" % "test"
+      case "2.9.0-SNAPSHOT" =>
+        "org.scalatest" % "scalatest" % "1.4-SNAPSHOT" % "test"
     }
   val junit = "junit" % "junit" % "4.8.1"
   val log4j = "log4j" % "log4j" % "1.2.16"
