@@ -97,4 +97,13 @@ class SortedSetOperationsSpec extends Spec
       zrangeWithScore("hackers weighted").get.map(_._2.toInt) should equal(List(1953, 1965, 3832, 3938, 5820, 7648))
     }
   }
+  
+  describe("zrangebyscore") {
+    it ("should do a zrangebyscore (with scores)") {
+      add
+      zrangebyscore("hackers", 1940, true, 1960, true, None).get should equal (List ("alan kay", "richard stallman"))
+
+      zrangebyscoreWithScore("hackers", 1940, true, 1960, true, None).get should equal (List ( ("alan kay", 1940), ("richard stallman", 1953) ))
+    }
+  }  
 }
