@@ -10,8 +10,8 @@ class RedisClientProject(info: ProjectInfo) extends DefaultProject(info)
 
   val scalaToolsSnapshots = "Scala-Tools Maven2 Snapshots Repository" at "http://scala-tools.org/repo-snapshots"
   val scalaToolsReleases = "Scala-Tools Maven2 Releases Repository" at "http://scala-tools.org/repo-releases"
-  val scalatest = "org.scalatest" % "scalatest_2.9.0" % "1.4.1" % "test"
-  val junit = "junit" % "junit" % "4.8.1"
+  val scalatest = "org.scalatest" % "scalatest_2.9.0" % "1.6.1" % "test"
+  val junit = "junit" % "junit" % "4.8.1" % "test"
   val log4j = "log4j" % "log4j" % "1.2.16"
   val slf4japi = "org.slf4j" % "slf4j-api" % "1.5.8"
   val slf4j = "org.slf4j" % "slf4j-log4j12" % "1.5.8"
