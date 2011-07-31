@@ -3,14 +3,16 @@
 ## Key features of the library
 
 - Native Scala types Set and List responses.
-- Consisten Hashing on the client.
+- Transparent serialization
+- Connection pooling
+- Consistent Hashing on the client.
 - Support for Clustering of Redis nodes.
 
 ## Information about redis
 
 Redis is a key-value database. It is similar to memcached but the dataset is not volatile, and values can be strings, exactly like in memcached, but also lists and sets with atomic operations to push/pop elements.
 
-http://code.google.com/p/redis/
+http://redis.io
 
 ### Key features of Redis
 
@@ -38,9 +40,28 @@ Redis 2 implements a new protocol for binary safe commands and replies
 let us connect and get a key:
 
     scala> import com.redis._
+    import com.redis._
+
     scala> val r = new RedisClient("localhost", 6379)
+    r: com.redis.RedisClient = localhost:6379
+
     scala> r.set("key", "some value")
+    res3: Boolean = true
+
     scala> r.get("key")
+    res4: Option[String] = Some(some value)
+
+Let us try out some List operations:
+
+    scala> r.lpush("list-1", "foo")
+    res0: Option[Int] = Some(1)
+
+    scala> r.rpush("list-1", "bar")
+    res1: Option[Int] = Some(2)
+
+    scala> r.llen("list-1")
+    res2: Option[Int] = Some(2)
+
 
 ## License
 
