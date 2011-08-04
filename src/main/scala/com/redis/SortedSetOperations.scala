@@ -4,15 +4,15 @@ import serialization._
 
 trait SortedSetOperations { self: Redis =>
   
-  // ZADD
-  // Add the specified member having the specified score to the sorted set stored at key.
-  def zadd(key: Any, score: Double, member: Any)(implicit format: Format): Boolean =
-    send("ZADD", List(key, score, member))(asBoolean)
+  // ZADD (Variadic: >= 2.4)
+  // Add the specified members having the specified score to the sorted set stored at key.
+  def zadd(key: Any, score: Double, member: Any, scoreVals: (Double, Any)*)(implicit format: Format): Option[Int] =
+    send("ZADD", List(key, score, member) ::: scoreVals.toList.map(x => List(x._1, x._2)).flatten)(asInt)
   
-  // ZREM
-  // Remove the specified member from the sorted set value stored at key.
-  def zrem(key: Any, member: Any)(implicit format: Format): Boolean =
-    send("ZREM", List(key, member))(asBoolean)
+  // ZREM (Variadic: >= 2.4)
+  // Remove the specified members from the sorted set value stored at key.
+  def zrem(key: Any, member: Any, members: Any*)(implicit format: Format): Option[Int] =
+    send("ZREM", List(key, member) ::: members.toList)(asInt)
   
   // ZINCRBY
   // 

@@ -39,6 +39,14 @@ class ListOperationsSpec extends Spec
     }
   }
 
+  describe("lpush with variadic arguments") {
+    it("should add to the head of the list") {
+      r.lpush("list-1", "foo", "bar", "baz") should equal(Some(3))
+      r.lpush("list-1", "bag", "fog") should equal(Some(5))
+      r.lpush("list-1", "bag", "fog") should equal(Some(7))
+    }
+  }
+
   describe("rpush") {
     it("should add to the head of the list") {
       r.rpush("list-1", "foo") should equal(Some(1))
@@ -48,6 +56,14 @@ class ListOperationsSpec extends Spec
       r.set("anshin-1", "debasish") should equal(true)
       val thrown = evaluating { r.rpush("anshin-1", "bar") } should produce [Exception]
       thrown.getMessage should equal("ERR Operation against a key holding the wrong kind of value")
+    }
+  }
+
+  describe("rpush with variadic arguments") {
+    it("should add to the head of the list") {
+      r.rpush("list-1", "foo", "bar", "baz") should equal(Some(3))
+      r.rpush("list-1", "bag", "fog") should equal(Some(5))
+      r.rpush("list-1", "bag", "fog") should equal(Some(7))
     }
   }
 
@@ -276,6 +292,13 @@ class ListOperationsSpec extends Spec
       r.lpush("list-1", "foo\nbar\nbaz") should equal(Some(1))
       r.lpush("list-1", "bar\nfoo\nbaz") should equal(Some(2))
       r.lpop("list-1") should equal(Some("bar\nfoo\nbaz"))
+      r.lpop("list-1") should equal(Some("foo\nbar\nbaz"))
+    }
+  }
+
+  describe("lpush with array bytes") {
+    it("should add to the head of the list") {
+      r.lpush("list-1", "foo\nbar\nbaz".getBytes("UTF-8")) should equal(Some(1))
       r.lpop("list-1") should equal(Some("foo\nbar\nbaz"))
     }
   }

@@ -43,6 +43,14 @@ class SetOperationsSpec extends Spec
     }
   }
 
+  describe("sadd with variadic arguments") {
+    it("should add a non-existent value to the set") {
+      r.sadd("set-1", "foo", "bar", "baz").get should equal(3)
+      r.sadd("set-1", "foo", "bar", "faz").get should equal(1)
+      r.sadd("set-1", "bar").get should equal(0)
+    }
+  }
+
   describe("srem") {
     it("should remove a value from the set") {
       r.sadd("set-1", "foo").get should equal(1)
@@ -58,6 +66,15 @@ class SetOperationsSpec extends Spec
       r.lpush("list-1", "foo") should equal(Some(1))
       val thrown = evaluating { r.srem("list-1", "foo") } should produce [Exception]
       thrown.getMessage should equal("ERR Operation against a key holding the wrong kind of value")
+    }
+  }
+
+  describe("srem with variadic arguments") {
+    it("should remove a value from the set") {
+      r.sadd("set-1", "foo", "bar", "baz", "faz").get should equal(4)
+      r.srem("set-1", "foo", "bar").get should equal(2)
+      r.srem("set-1", "foo").get should equal(0)
+      r.srem("set-1", "baz", "bar").get should equal(1)
     }
   }
 

@@ -4,15 +4,15 @@ import serialization._
 
 trait SetOperations { self: Redis =>
 
-  // SADD
-  // Add the specified member to the set value stored at key.
-  def sadd(key: Any, value: Any)(implicit format: Format): Option[Int] =
-    send("SADD", List(key, value))(asInt)
+  // SADD (VARIADIC: >= 2.4)
+  // Add the specified members to the set value stored at key.
+  def sadd(key: Any, value: Any, values: Any*)(implicit format: Format): Option[Int] =
+    send("SADD", List(key, value) ::: values.toList)(asInt)
 
-  // SREM
-  // Remove the specified member from the set value stored at key.
-  def srem(key: Any, value: Any)(implicit format: Format): Option[Int] =
-    send("SREM", List(key, value))(asInt)
+  // SREM (VARIADIC: >= 2.4)
+  // Remove the specified members from the set value stored at key.
+  def srem(key: Any, value: Any, values: Any*)(implicit format: Format): Option[Int] =
+    send("SREM", List(key, value) ::: values.toList)(asInt)
 
   // SPOP
   // Remove and return (pop) a random element from the Set value at key.

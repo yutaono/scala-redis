@@ -4,15 +4,15 @@ import serialization._
 
 trait ListOperations { self: Redis =>
 
-  // LPUSH
-  // add string value to the head of the list stored at key
-  def lpush(key: Any, value: Any)(implicit format: Format): Option[Int] =
-    send("LPUSH", List(key, value))(asInt)
+  // LPUSH (Variadic: >= 2.4)
+  // add values to the head of the list stored at key
+  def lpush(key: Any, value: Any, values: Any*)(implicit format: Format): Option[Int] =
+    send("LPUSH", List(key, value) ::: values.toList)(asInt)
 
-  // RPUSH
-  // add string value to the head of the list stored at key
-  def rpush(key: Any, value: Any)(implicit format: Format): Option[Int] =
-    send("RPUSH", List(key, value))(asInt)
+  // RPUSH (Variadic: >= 2.4)
+  // add value to the head of the list stored at key
+  def rpush(key: Any, value: Any, values: Any*)(implicit format: Format): Option[Int] =
+    send("RPUSH", List(key, value) ::: values.toList)(asInt)
 
   // LLEN
   // return the length of the list stored at the specified key.
