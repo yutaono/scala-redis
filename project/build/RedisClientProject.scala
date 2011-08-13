@@ -15,7 +15,7 @@ class RedisClientProject(info: ProjectInfo) extends DefaultProject(info)
   val log4j = "log4j" % "log4j" % "1.2.16"
   val slf4japi = "org.slf4j" % "slf4j-api" % "1.5.8"
   val slf4j = "org.slf4j" % "slf4j-log4j12" % "1.5.8"
-  val commons_pool = "commons-pool" % "commons-pool" % "1.5.5" % "compile" //ApacheV2
+  val commons_pool = "commons-pool" % "commons-pool" % "1.5.6" % "compile" //ApacheV2
 
   override def packageSrcJar = defaultJarPath("-sources.jar")
   lazy val sourceArtifact = Artifact.sources(artifactID)
