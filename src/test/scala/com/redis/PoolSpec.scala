@@ -25,8 +25,9 @@ class PoolSpec extends Spec
     client => client.flushdb
   }
 
-  override def afterAll = clients.withClient{
-    client => client.disconnect
+  override def afterAll = {
+    clients.withClient{ client => client.disconnect }
+    clients.close
   }
 
   def lp(msgs: List[String]) = {
@@ -67,6 +68,27 @@ class PoolSpec extends Spec
       val tasks = fns map (fn => scala.actors.Futures.future { fn(l) })
       val results = tasks map (future => future.apply())
       results should equal(List(Some(5000), Some(5000), Some(1000)))
+    }
+  }
+
+  def leftp(msgs: List[String]) = {
+    clients.withClient {
+      client => {
+        val ln = new util.Random().nextString(10)
+        msgs.foreach(client.lpush(ln, _))
+        client.llen(ln)
+      }
+    }
+  }
+
+  describe("pool load test") {
+    it("should distribute work amongst the clients") {
+      val l = (0 until 5000).map(_.toString).toList
+      val fns: List[List[String] => Option[Int]] = List.fill(100)(leftp)
+      val tasks = fns map (fn => scala.actors.Futures.future { fn(l) })
+      val results = tasks map (future => future.apply())
+      println(results.size)
+      results should equal(List.fill(100)(Some(5000)))
     }
   }
 }

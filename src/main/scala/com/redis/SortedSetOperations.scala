@@ -4,15 +4,15 @@ import serialization._
 
 trait SortedSetOperations { self: Redis =>
   
-  // ZADD
-  // Add the specified member having the specified score to the sorted set stored at key.
-  def zadd(key: Any, score: Double, member: Any)(implicit format: Format): Boolean =
-    send("ZADD", List(key, score, member))(asBoolean)
+  // ZADD (Variadic: >= 2.4)
+  // Add the specified members having the specified score to the sorted set stored at key.
+  def zadd(key: Any, score: Double, member: Any, scoreVals: (Double, Any)*)(implicit format: Format): Option[Int] =
+    send("ZADD", List(key, score, member) ::: scoreVals.toList.map(x => List(x._1, x._2)).flatten)(asInt)
   
-  // ZREM
-  // Remove the specified member from the sorted set value stored at key.
-  def zrem(key: Any, member: Any)(implicit format: Format): Boolean =
-    send("ZREM", List(key, member))(asBoolean)
+  // ZREM (Variadic: >= 2.4)
+  // Remove the specified members from the sorted set value stored at key.
+  def zrem(key: Any, member: Any, members: Any*)(implicit format: Format): Option[Int] =
+    send("ZREM", List(key, member) ::: members.toList)(asInt)
   
   // ZINCRBY
   // 
@@ -47,8 +47,19 @@ trait SortedSetOperations { self: Redis =>
                        minInclusive: Boolean = true,
                        max: Double = Double.PositiveInfinity,
                        maxInclusive: Boolean = true,
-                       limit: Option[(Int, Int)])(implicit format: Format, parse: Parse[A]): Option[List[A]] =
-    send("ZRANGEBYSCORE", key :: Format.formatDouble(min, minInclusive) :: Format.formatDouble(max, maxInclusive) :: limit.toList.flatMap(l => List(l._1, l._2)))(asList.map(_.flatten))
+                       limit: Option[(Int, Int)])(implicit format: Format, parse: Parse[A]): Option[List[A]] = {
+
+      val limitEntries = if(!limit.isEmpty) { 
+        "LIMIT" :: limit.toList.flatMap(l => List(l._1, l._2))
+      } else { 
+        List()
+      }
+      send("ZRANGEBYSCORE", key :: 
+        Format.formatDouble(min, minInclusive) :: 
+        Format.formatDouble(max, maxInclusive) ::
+        limitEntries
+      )(asList.map(_.flatten))
+   }
 
   def zrangebyscoreWithScore[A](key: Any,
                        min: Double = Double.NegativeInfinity,
@@ -82,5 +93,10 @@ trait SortedSetOperations { self: Redis =>
 
   def zunionstoreWeighted(dstKey: Any, kws: Iterable[Product2[Any,Double]], aggregate: Aggregate = SUM)(implicit format: Format): Option[Int] =
     send("ZUNIONSTORE", (Iterator(dstKey, kws.size) ++ kws.iterator.map(_._1) ++ Iterator.single("WEIGHTS") ++ kws.iterator.map(_._2) ++ Iterator("AGGREGATE", aggregate)).toList)(asInt)
+
+  // ZCOUNT
+  //
+  def zcount(key: Any, min: Double = Double.NegativeInfinity, max: Double = Double.PositiveInfinity, minInclusive: Boolean = true, maxInclusive: Boolean = true)(implicit format: Format): Option[Int] =
+    send("ZCOUNT", List(key, Format.formatDouble(min, minInclusive), Format.formatDouble(max, maxInclusive)))(asInt)
 
 }

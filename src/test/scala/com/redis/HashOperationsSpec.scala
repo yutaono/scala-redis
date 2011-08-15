@@ -54,8 +54,10 @@ class HashOperationsSpec extends Spec
     it("should delete fields") {
       r.hset("hash5", "field1", "val")
       r.hexists("hash5", "field1") should equal(true)
-      r.hdel("hash5", "field1")
+      r.hdel("hash5", "field1") should equal(Some(1))
       r.hexists("hash5", "field1") should equal(false)
+      r.hmset("hash5", Map("field1" -> "val1", "field2" -> "val2"))
+      r.hdel("hash5", "field1", "field2") should equal(Some(2))
     }
     
     it("should return the length of the fields") {

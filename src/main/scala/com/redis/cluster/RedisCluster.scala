@@ -158,8 +158,8 @@ abstract class RedisCluster(hosts: String*) extends RedisClient {
   /**
    * ListOperations
    */
-  override def lpush(key: Any, value: Any)(implicit format: Format) = nodeForKey(key).lpush(key, value)
-  override def rpush(key: Any, value: Any)(implicit format: Format) = nodeForKey(key).rpush(key, value)
+  override def lpush(key: Any, value: Any, values: Any*)(implicit format: Format) = nodeForKey(key).lpush(key, value, values:_*)
+  override def rpush(key: Any, value: Any, values: Any*)(implicit format: Format) = nodeForKey(key).lpush(key, value, values:_*)
   override def llen(key: Any)(implicit format: Format) = nodeForKey(key).llen(key)
   override def lrange[A](key: Any, start: Int, end: Int)(implicit format: Format, parse: Parse[A]) = nodeForKey(key).lrange[A](key, start, end)
   override def ltrim(key: Any, start: Int, end: Int)(implicit format: Format) = nodeForKey(key).ltrim(key, start, end)
@@ -183,8 +183,8 @@ abstract class RedisCluster(hosts: String*) extends RedisClient {
   /**
    * SetOperations
    */
-  override def sadd(key: Any, value: Any)(implicit format: Format) = nodeForKey(key).sadd(key, value)
-  override def srem(key: Any, value: Any)(implicit format: Format) = nodeForKey(key).srem(key, value)
+  override def sadd(key: Any, value: Any, values: Any*)(implicit format: Format): Option[Int] = nodeForKey(key).sadd(key, value, values:_*)
+  override def srem(key: Any, value: Any, values: Any*)(implicit format: Format): Option[Int] = nodeForKey(key).srem(key, value, values:_*)
   override def spop[A](key: Any)(implicit format: Format, parse: Parse[A]) = nodeForKey(key).spop[A](key)
 
   override def smove(sourceKey: Any, destKey: Any, value: Any)(implicit format: Format) = 
@@ -221,8 +221,10 @@ abstract class RedisCluster(hosts: String*) extends RedisClient {
   /**
    * SortedSetOperations
    */
-  override def zadd(key: Any, score: Double, member: Any)(implicit format: Format) = nodeForKey(key).zadd(key, score, member)
-  override def zrem(key: Any, member: Any)(implicit format: Format) = nodeForKey(key).zrem(key, member)
+  override def zadd(key: Any, score: Double, member: Any, scoreVals: (Double, Any)*)(implicit format: Format) = 
+    nodeForKey(key).zadd(key, score, member, scoreVals:_*)
+  override def zrem(key: Any, member: Any, members: Any*)(implicit format: Format): Option[Int] = 
+    nodeForKey(key).zrem(key, member, members)
   override def zincrby(key: Any, incr: Double, member: Any)(implicit format: Format) = nodeForKey(key).zincrby(key, incr, member)
   override def zcard(key: Any)(implicit format: Format) = nodeForKey(key).zcard(key)
   override def zscore(key: Any, element: Any)(implicit format: Format) = nodeForKey(key).zscore(key, element)
@@ -232,6 +234,8 @@ abstract class RedisCluster(hosts: String*) extends RedisClient {
     nodeForKey(key).zrangeWithScore[A](key, start, end, sortAs)
   override def zrangebyscore[A](key: Any, min: Double = Double.NegativeInfinity, minInclusive: Boolean = true, max: Double = Double.PositiveInfinity, maxInclusive: Boolean = true, limit: Option[(Int, Int)])(implicit format: Format, parse: Parse[A]) =
     nodeForKey(key).zrangebyscore[A](key, min, minInclusive, max, maxInclusive, limit)
+  override def zcount(key: Any, min: Double = Double.NegativeInfinity, max: Double = Double.PositiveInfinity, minInclusive: Boolean = true, maxInclusive: Boolean = true)(implicit format: Format): Option[Int] =
+    nodeForKey(key).zcount(key, min, max, minInclusive, maxInclusive)
 
   /**
    * HashOperations
@@ -242,7 +246,7 @@ abstract class RedisCluster(hosts: String*) extends RedisClient {
   override def hmget[K,V](key: Any, fields: K*)(implicit format: Format, parseV: Parse[V]) = nodeForKey(key).hmget[K,V](key, fields:_*)
   override def hincrby(key: Any, field: Any, value: Int)(implicit format: Format) = nodeForKey(key).hincrby(key, field, value)
   override def hexists(key: Any, field: Any)(implicit format: Format) = nodeForKey(key).hexists(key, field)
-  override def hdel(key: Any, field: Any)(implicit format: Format) = nodeForKey(key).hdel(key, field)
+  override def hdel(key: Any, field: Any, fields: Any*)(implicit format: Format): Option[Int] = nodeForKey(key).hdel(key, field, fields:_*)
   override def hlen(key: Any)(implicit format: Format) = nodeForKey(key).hlen(key)
   override def hkeys[A](key: Any)(implicit format: Format, parse: Parse[A]) = nodeForKey(key).hkeys[A](key)
   override def hvals[A](key: Any)(implicit format: Format, parse: Parse[A]) = nodeForKey(key).hvals[A](key)

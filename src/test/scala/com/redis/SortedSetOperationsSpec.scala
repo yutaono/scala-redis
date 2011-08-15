@@ -30,19 +30,24 @@ class SortedSetOperationsSpec extends Spec
   import r._
 
   private def add = {
-    zadd("hackers", 1965, "yukihiro matsumoto") should equal(true)
-    zadd("hackers", 1953, "richard stallman") should equal(true)
-    zadd("hackers", 1916, "claude shannon") should equal(true)
-    zadd("hackers", 1969, "linus torvalds") should equal(true)
-    zadd("hackers", 1940, "alan kay") should equal(true)
-    zadd("hackers", 1912, "alan turing")should equal(true)
+    zadd("hackers", 1965, "yukihiro matsumoto") should equal(Some(1))
+    zadd("hackers", 1953, "richard stallman", (1916, "claude shannon"), (1969, "linus torvalds"), (1940, "alan kay"), (1912, "alan turing")) should equal(Some(5))
   }
 
   describe("zadd") {
     it("should add based on proper sorted set semantics") {
       add
-      zadd("hackers", 1912, "alan turing") should equal(false)
+      zadd("hackers", 1912, "alan turing") should equal(Some(0))
       zcard("hackers").get should equal(6)
+    }
+  }
+
+  describe("zrem") {
+    it("should remove") {
+      add
+      zrem("hackers", "alan turing") should equal(Some(1))
+      zrem("hackers", "alan kay", "linus torvalds") should equal(Some(2))
+      zrem("hackers", "alan kay", "linus torvalds") should equal(Some(0))
     }
   }
 
@@ -79,12 +84,12 @@ class SortedSetOperationsSpec extends Spec
 
   describe("zunion") {
     it ("should do a union") {
-      zadd("hackers 1", 1965, "yukihiro matsumoto") should equal(true)
-      zadd("hackers 1", 1953, "richard stallman") should equal(true)
-      zadd("hackers 2", 1916, "claude shannon") should equal(true)
-      zadd("hackers 2", 1969, "linus torvalds") should equal(true)
-      zadd("hackers 3", 1940, "alan kay") should equal(true)
-      zadd("hackers 4", 1912, "alan turing") should equal(true)
+      zadd("hackers 1", 1965, "yukihiro matsumoto") should equal(Some(1))
+      zadd("hackers 1", 1953, "richard stallman") should equal(Some(1))
+      zadd("hackers 2", 1916, "claude shannon") should equal(Some(1))
+      zadd("hackers 2", 1969, "linus torvalds") should equal(Some(1))
+      zadd("hackers 3", 1940, "alan kay") should equal(Some(1))
+      zadd("hackers 4", 1912, "alan turing") should equal(Some(1))
 
       // union with weight = 1
       zunionstore("hackers", List("hackers 1", "hackers 2", "hackers 3", "hackers 4")) should equal(Some(6))
@@ -98,6 +103,14 @@ class SortedSetOperationsSpec extends Spec
     }
   }
   
+  describe("zcount") {
+    it ("should return the number of elements between min and max") {
+      add
+      
+      zcount("hackers", 1912, 1920) should equal(Some(2))
+    }
+  }
+
   describe("zrangebyscore") {
     it ("should do a zrangebyscore (with scores)") {
       add
@@ -105,5 +118,5 @@ class SortedSetOperationsSpec extends Spec
 
       zrangebyscoreWithScore("hackers", 1940, true, 1960, true, None).get should equal (List ( ("alan kay", 1940), ("richard stallman", 1953) ))
     }
-  }  
+  } 
 }

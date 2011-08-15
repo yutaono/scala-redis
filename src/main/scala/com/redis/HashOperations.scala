@@ -3,13 +3,13 @@ package com.redis
 import serialization._
 
 trait HashOperations { self: Redis =>
-  def hset(key : Any, field : Any, value : Any)(implicit format: Format): Boolean =
+  def hset(key: Any, field: Any, value: Any)(implicit format: Format): Boolean =
     send("HSET", List(key, field, value))(asBoolean)
   
-  def hget[A](key : Any, field : Any)(implicit format: Format, parse: Parse[A]) : Option[A] =
+  def hget[A](key: Any, field: Any)(implicit format: Format, parse: Parse[A]): Option[A] =
     send("HGET", List(key, field))(asBulk)
   
-  def hmset(key : Any, map : Iterable[Product2[Any,Any]])(implicit format: Format) : Boolean =
+  def hmset(key: Any, map: Iterable[Product2[Any,Any]])(implicit format: Format): Boolean =
     send("HMSET", key :: flattenPairs(map))(asBoolean)
   
   def hmget[K,V](key: Any, fields: K*)(implicit format: Format, parseV: Parse[V]): Option[Map[K,V]] =
@@ -22,24 +22,24 @@ trait HashOperations { self: Redis =>
       }
     }
   
-  def hincrby(key : Any, field : Any, value : Int)(implicit format: Format) : Option[Int] =
+  def hincrby(key: Any, field: Any, value: Int)(implicit format: Format): Option[Int] =
     send("HINCRBY", List(key, field, value))(asInt)
   
-  def hexists(key : Any, field : Any)(implicit format: Format) : Boolean =
+  def hexists(key: Any, field: Any)(implicit format: Format): Boolean =
     send("HEXISTS", List(key, field))(asBoolean)
   
-  def hdel(key : Any, field : Any)(implicit format: Format) : Boolean =
-    send("HDEL", List(key, field))(asBoolean)
+  def hdel(key: Any, field: Any, fields: Any*)(implicit format: Format): Option[Int] =
+    send("HDEL", List(key, field) ::: fields.toList)(asInt)
   
-  def hlen(key : Any)(implicit format: Format) : Option[Int] =
+  def hlen(key: Any)(implicit format: Format): Option[Int] =
     send("HLEN", List(key))(asInt)
   
-  def hkeys[A](key : Any)(implicit format: Format, parse: Parse[A]) : Option[List[A]] =
+  def hkeys[A](key: Any)(implicit format: Format, parse: Parse[A]): Option[List[A]] =
     send("HKEYS", List(key))(asList.map(_.flatten))
   
-  def hvals[A](key : Any)(implicit format: Format, parse: Parse[A]) : Option[List[A]] =
+  def hvals[A](key: Any)(implicit format: Format, parse: Parse[A]): Option[List[A]] =
     send("HVALS", List(key))(asList.map(_.flatten))
   
-  def hgetall[K,V](key : Any)(implicit format: Format, parseK: Parse[K], parseV: Parse[V]) : Option[Map[K,V]] =
+  def hgetall[K,V](key: Any)(implicit format: Format, parseK: Parse[K], parseV: Parse[V]): Option[Map[K,V]] =
     send("HGETALL", List(key))(asListPairs[K,V].map(_.flatten.toMap))
 }
