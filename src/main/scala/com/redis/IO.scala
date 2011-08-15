@@ -1,9 +1,9 @@
 package com.redis
 
-import java.io._
 import java.net.Socket
 
 import serialization.Parse.parseStringSafe
+import java.io._
 
 trait IO extends Log {
   val host: String
@@ -85,6 +85,7 @@ trait IO extends Log {
     var build = new scala.collection.mutable.ArrayBuilder.ofByte
     while (delimiter != Nil) {
       val next = in.read
+      if (next == -1) throw new IOException("stream was closed unexpectedly!")
       if (next == delimiter.head) {
         found ::= delimiter.head
         delimiter = delimiter.tail
