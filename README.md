@@ -97,6 +97,67 @@ Let us look at some serialization stuff:
     scala> r.get[Array[Byte]]("keey")
     res5: Option[Array[Byte]] = None
 
+## Using Client Pooling
+
+scala-redis is a blocking client, which serves the purpose in most of the cases since Redis is also single threaded. But there may be situations when clients need to manage multiple RedisClients to ensure thread-safe programming.
+
+scala-redis includes a Pool implementation which can be used to serve this purpose. Based on Apache Commons Pool implementation, RedisClientPool maintains a pool of instances of RedisClient, which can grow based on demand. Here's a sample usage ..
+
+    val clients = new RedisClientPool("localhost", 6379)
+    def lp(msgs: List[String]) = {
+      clients.withClient {
+        client => {
+          msgs.foreach(client.lpush("list-l", _))
+          client.llen("list-l")
+        }
+      }
+    }
+
+Using a combination of pooling and futures, scala-redis can be throttled for more parallelism. This is the typical recommended strategy if you are looking forward to scale up using this redis client. Here's a sample usage .. we are doing a parallel throttle of an lpush, rpush and set operations in redis, each repeated a number of times ..
+
+If we have a pool initialized, then we can use the pool to repeat the following operations. 
+
+    // lpush
+    def lp(msgs: List[String]) = {
+      clients.withClient {
+        client => {
+          msgs.foreach(client.lpush("list-l", _))
+          client.llen("list-l")
+        }
+      }
+    }
+
+    // rpush
+    def rp(msgs: List[String]) = {
+      clients.withClient {
+        client => {
+          msgs.foreach(client.rpush("list-r", _))
+          client.llen("list-r")
+        }
+      }
+    }
+
+    // set
+    def set(msgs: List[String]) = {
+      clients.withClient {
+        client => {
+          var i = 0
+          msgs.foreach { v =>
+            client.set("key-%d".format(i), v)
+            i += 1
+          }
+          Some(1000)
+        }
+      }
+    }
+
+And here's the snippet that throttles our redis server with the above operations in a non blocking mode using Scala futures:
+
+    val l = (0 until 5000).map(_.toString).toList
+    val fns = List[List[String] => Option[Int]](lp, rp, set)
+    val tasks = fns map (fn => scala.actors.Futures.future { fn(l) })
+    val results = tasks map (future => future.apply())
+
 
 ## License
 
