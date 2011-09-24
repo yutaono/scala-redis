@@ -202,11 +202,11 @@ Here's the main routine that implements the pattern:
 
 The sample test suite based on this implementation gives the following numbers when run on my quad-core, 8GB MBP:
 
-----------------------------------------------------------------------------------------
- Operations per run: 400000 elapsed: 3.279764 ops per second: 121959.99468254423
- Operations per run: 1000000 elapsed: 7.746883 ops per second: 129084.17488685448
- Operations per run: 2000000 elapsed: 15.391637 ops per second: 129940.69441736444
-----------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------
+Operations per run: 400000 elapsed: 3.279764 ops per second: 121959.99468254423
+Operations per run: 1000000 elapsed: 7.746883 ops per second: 129084.17488685448
+Operations per run: 2000000 elapsed: 15.391637 ops per second: 129940.69441736444
+------------------------------------------------------------------------------------
 
 ## License
 
