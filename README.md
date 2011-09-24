@@ -158,6 +158,55 @@ And here's the snippet that throttles our redis server with the above operations
     val tasks = fns map (fn => scala.actors.Futures.future { fn(l) })
     val results = tasks map (future => future.apply())
 
+## Implementing asynchronous patterns using pooling and Futures
+
+scala-redis is a blocking client for Redis. But you can develop high performance asynchronous patterns of computation using scala-redis and Futures. RedisClientPool allows you to work with multiple RedisClient instances and Futures offer a non-blocking semantics on top of this. The combination can give you good numbers for implementing common usage patterns like scatter/gather. Here's an example that you will also find in the test suite. It uses the scatter/gather technique to do loads of push across many lists in parallel. The gather phase pops from all those lists in parallel and does some compuation over them.
+
+Here's the main routine that implements the pattern:
+
+    def scatterGatherWithList(opsPerClient: Int)(implicit clients: RedisClientPool) = {
+      // set up Executors
+      val futures = FuturePool(Executors.newFixedThreadPool(8))
+  
+      // scatter phase: push to 100 lists in parallel
+      val futurePushes: Seq[Future[Int]] =
+        (1 to 100) map {i => 
+          futures {
+            listPush(opsPerClient, "list_" + i)
+          }
+        }
+  
+      // wait till all pushes complete
+      val allPushes: Future[Seq[Int]] = Future.collect(futurePushes)
+      
+      // entering gather phase
+      val allSum = 
+        allPushes onSuccess {result =>
+  
+          // pop from all 100 lists in parallel
+          val futurePops: Seq[Future[Int]] =
+            (1 to 100) map {i => 
+              futures {
+                listPop(opsPerClient, "list_" + i)
+              }
+            }
+  
+          // wait till all pops are complete
+          val allPops: Future[Seq[Int]] = Future.collect(futurePops)
+  
+          // compute sum of all integers
+          allPops onSuccess {members => members.sum}
+        }
+      allSum.apply
+    }
+
+The sample test suite based on this implementation gives the following numbers when run on my quad-core, 8GB MBP:
+
+----------------------------------------------------------------------------------------
+ Operations per run: 400000 elapsed: 3.279764 ops per second: 121959.99468254423
+ Operations per run: 1000000 elapsed: 7.746883 ops per second: 129084.17488685448
+ Operations per run: 2000000 elapsed: 15.391637 ops per second: 129940.69441736444
+----------------------------------------------------------------------------------------
 
 ## License
 

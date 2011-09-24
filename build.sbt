@@ -6,6 +6,8 @@ version := "2.4.0"
 
 crossScalaVersions := Seq("2.9.1", "2.9.0", "2.8.1", "2.8.0")
 
+resolvers += "Twitter Repository" at "http://maven.twttr.com"
+
 libraryDependencies <++= scalaVersion { scalaVersion =>
   // Helper for dynamic version switching based on scalaVersion
   val scalatestVersion: String => String = Map(("2.8.0" -> "1.3.1.RC2"), ("2.8.1" -> "1.5.1")) getOrElse (_, "1.6.1")
@@ -16,7 +18,9 @@ libraryDependencies <++= scalaVersion { scalaVersion =>
     "org.slf4j"      % "slf4j-log4j12" % "1.6.1"  % "provided",
     "log4j"          % "log4j"         % "1.2.16" % "provided",
     "junit"          % "junit"         % "4.8.1"  % "test",
-    "org.scalatest" %% "scalatest"     % scalatestVersion(scalaVersion) % "test"
+    "org.scalatest" %% "scalatest"     % scalatestVersion(scalaVersion) % "test",
+    "com.twitter"    % "util"          % "1.11.4" % "test",
+    "com.twitter"    % "finagle-core"  % "1.9.0" % "test"
   )
 }
 
