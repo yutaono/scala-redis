@@ -31,10 +31,20 @@ class PatternsSpec extends Spec
 
   def runScatterGather(opsPerRun: Int) = {
     val start = System.nanoTime
-    scatterGatherWithList(opsPerRun)
+    val sum = scatterGatherWithList(opsPerRun)
+    assert(sum == (1L to opsPerRun).sum * 100L)
     val elapsed: Double = (System.nanoTime - start) / 1000000000.0
     val opsPerSec: Double = (100 * opsPerRun * 2) / elapsed
     println("Operations per run: " + opsPerRun * 100 * 2 + " elapsed: " + elapsed + " ops per second: " + opsPerSec)
+  }
+
+  def runScatterGatherFirst(opsPerRun: Int) = {
+    val start = System.nanoTime
+    val sum = scatterGatherFirstWithList(opsPerRun)
+    assert(sum == (1 to opsPerRun).sum)
+    val elapsed: Double = (System.nanoTime - start) / 1000000000.0
+    val opsPerSec: Double = (101 * opsPerRun) / elapsed
+    println("Operations per run: " + opsPerRun * 101 + " elapsed: " + elapsed + " ops per second: " + opsPerSec)
   }
 
   describe("scatter/gather with list test 1") {
@@ -52,6 +62,12 @@ class PatternsSpec extends Spec
   describe("scatter/gather with list test 3") {
     it("should distribute work amongst the clients") {
       runScatterGather(10000)
+    }
+  }
+
+  describe("scatter/gather first with list test 1") {
+    it("should distribute work amongst the clients") {
+      runScatterGatherFirst(5000)
     }
   }
 }

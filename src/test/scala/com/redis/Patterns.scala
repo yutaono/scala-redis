@@ -2,7 +2,9 @@ package com.redis
 
 import serialization._
 import java.util.concurrent.Executors
-import com.twitter.util.{Future, FuturePool}
+import com.twitter.util.{Future, FuturePool, Return, TimeoutException}
+import com.twitter.conversions.time._
+import com.twitter.util.{Timer, JavaTimer}
 
 /**
  * Implementing some of the common patterns like scatter/gather, which can benefit from
@@ -15,9 +17,9 @@ import com.twitter.util.{Future, FuturePool}
  * an MBP quad core 8G are:
  *
  * ---------------------------------------------------------------------------------------
- * Operations per run: 400000 elapsed: 3.279764 ops per second: 121959.99468254423
- * Operations per run: 1000000 elapsed: 7.746883 ops per second: 129084.17488685448
- * Operations per run: 2000000 elapsed: 15.391637 ops per second: 129940.69441736444
+ * Operations per run: 400000 elapsed: 6.783825 ops per second: 58963.78518018964
+ * Operations per run: 1000000 elapsed: 16.182655 ops per second: 61794.55719719663
+ * Operations per run: 2000000 elapsed: 32.440666 ops per second: 46782.3752009831
  * ---------------------------------------------------------------------------------------
  */
 object Patterns {
@@ -26,51 +28,79 @@ object Patterns {
       (1 to count) foreach {i => client.rpush(key, i)}
       assert(client.llen(key) == Some(count))
     }
-    0
+    key
   }
 
   def listPop(count: Int, key: String)(implicit clients: RedisClientPool) = {
-    implicit val parseInt = Parse[Int](new String(_).toInt)
+    implicit val parseInt = Parse[Long](new String(_).toLong)
     clients.withClient { client =>
-      val list = (1 to count) map {i => client.lpop[Int](key).get}
+      val list = (1 to count) map {i => client.lpop[Long](key).get}
       assert(client.llen(key) == Some(0))
       list.sum
     }
   }
 
+  implicit val timer = new JavaTimer
+
+  // scatter across clients and gather them to do a sum
   def scatterGatherWithList(opsPerClient: Int)(implicit clients: RedisClientPool) = {
     // set up Executors
     val futures = FuturePool(Executors.newFixedThreadPool(8))
 
     // scatter phase: push to 100 lists in parallel
-    val futurePushes: Seq[Future[Int]] =
+    val futurePushes: Seq[Future[String]] =
       (1 to 100) map {i => 
         futures {
           listPush(opsPerClient, "list_" + i)
+        }.within(40.seconds) handle {
+          case _: TimeoutException => null
         }
       }
 
     // wait till all pushes complete
-    val allPushes: Future[Seq[Int]] = Future.collect(futurePushes)
-    
-    // entering gather phase
-    val allSum = 
-      allPushes onSuccess {result =>
+    val allPushes: Future[Seq[String]] = Future.collect(futurePushes) 
+    val allSum = allPushes flatMap {result =>
 
-        // pop from all 100 lists in parallel
-        val futurePops: Seq[Future[Int]] =
-          (1 to 100) map {i => 
-            futures {
-              listPop(opsPerClient, "list_" + i)
-            }
+      // pop from all 100 lists in parallel
+      val futurePops: Seq[Future[Long]] =
+        (1 to 100) map {i => 
+          futures {
+            listPop(opsPerClient, "list_" + i)
+          }.within(40.seconds) handle {
+            case _: TimeoutException => -1L
           }
+        }
 
-        // wait till all pops are complete
-        val allPops: Future[Seq[Int]] = Future.collect(futurePops)
-
-        // compute sum of all integers
-        allPops onSuccess {members => members.sum}
-      }
+      // wait till all pops are complete
+      val allPops: Future[Seq[Long]] = Future.collect(futurePops) 
+      allPops map {members => members.sum}
+    }
     allSum.apply
+  }
+
+  // scatter across clietns and gather the first future to complete
+  def scatterGatherFirstWithList(opsPerClient: Int)(implicit clients: RedisClientPool) = {
+    // set up Executors
+    val futures = FuturePool(Executors.newFixedThreadPool(8))
+
+    // scatter phase: push to 100 lists in parallel
+    val futurePushes: Seq[Future[String]] =
+      (1 to 100) map {i => 
+        futures {
+          listPush(opsPerClient, "seq_" + i)
+        }.within(10.seconds) handle {
+          case _: TimeoutException => null
+        }
+      }
+
+    // wait for the first future to complete
+    val firstPush = Future.select(futurePushes)
+
+    // do a sum on the list whose key we got from firstPush
+    val firstSum = firstPush map {result =>
+      val Return(key) = result._1
+      listPop(opsPerClient, key)
+    }
+    firstSum.apply
   }
 }
