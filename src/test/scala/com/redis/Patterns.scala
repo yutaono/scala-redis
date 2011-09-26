@@ -42,42 +42,6 @@ object Patterns {
 
   implicit val timer = new JavaTimer
 
-  // scatter across clients and gather them to do a sum
-  def scatterGatherWithList(opsPerClient: Int)(implicit clients: RedisClientPool) = {
-    // set up Executors
-    val futures = FuturePool(Executors.newFixedThreadPool(8))
-
-    // scatter phase: push to 100 lists in parallel
-    val futurePushes: Seq[Future[String]] =
-      (1 to 100) map {i => 
-        futures {
-          listPush(opsPerClient, "list_" + i)
-        }.within(40.seconds) handle {
-          case _: TimeoutException => null
-        }
-      }
-
-    // wait till all pushes complete
-    val allPushes: Future[Seq[String]] = Future.collect(futurePushes) 
-    val allSum = allPushes flatMap {result =>
-
-      // pop from all 100 lists in parallel
-      val futurePops: Seq[Future[Long]] =
-        (1 to 100) map {i => 
-          futures {
-            listPop(opsPerClient, "list_" + i)
-          }.within(40.seconds) handle {
-            case _: TimeoutException => -1L
-          }
-        }
-
-      // wait till all pops are complete
-      val allPops: Future[Seq[Long]] = Future.collect(futurePops) 
-      allPops map {members => members.sum}
-    }
-    allSum.apply
-  }
-
   // scatter across clietns and gather the first future to complete
   def scatterGatherFirstWithList(opsPerClient: Int)(implicit clients: RedisClientPool) = {
     // set up Executors
@@ -102,5 +66,31 @@ object Patterns {
       listPop(opsPerClient, key)
     }
     firstSum.apply
+  }
+
+  // set up Executors
+  val futures = FuturePool(Executors.newFixedThreadPool(8))
+
+  private[this] def flow[A](noOfRecipients: Int, opsPerClient: Int, fn: (Int, String) => A) = {
+    val fs = (1 to noOfRecipients) map {i => 
+      futures {
+        fn(opsPerClient, "list_" + i)
+      }.within(40.seconds) handle {
+        case _: TimeoutException => null.asInstanceOf[A]
+      }
+    }
+    Future.collect(fs)
+  }
+
+  // scatter across clients and gather them to do a sum
+  def scatterGatherWithList(opsPerClient: Int)(implicit clients: RedisClientPool) = {
+    // scatter
+    val allPushes: Future[Seq[String]] = flow(100, opsPerClient, listPush)
+    val allSum = allPushes flatMap {result =>
+      // gather
+      val allPops: Future[Seq[Long]] = flow(100, opsPerClient, listPop)
+      allPops map {members => members.sum}
+    }
+    allSum.apply
   }
 }
