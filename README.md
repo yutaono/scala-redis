@@ -164,47 +164,39 @@ scala-redis is a blocking client for Redis. But you can develop high performance
 
 Here's the main routine that implements the pattern:
 
-    def scatterGatherWithList(opsPerClient: Int)(implicit clients: RedisClientPool) = {
-      // set up Executors
-      val futures = FuturePool(Executors.newFixedThreadPool(8))
-  
-      // scatter phase: push to 100 lists in parallel
-      val futurePushes: Seq[Future[Int]] =
-        (1 to 100) map {i => 
-          futures {
-            listPush(opsPerClient, "list_" + i)
-          }
+    implicit val timer = new JavaTimer
+
+    // set up Executors
+    val futures = FuturePool(Executors.newFixedThreadPool(8))
+
+    private[this] def flow[A](noOfRecipients: Int, opsPerClient: Int, keyPrefix: String, 
+      fn: (Int, String) => A) = {
+      (1 to noOfRecipients) map {i => 
+        futures {
+          fn(opsPerClient, "list_" + i)
+        }.within(40.seconds) handle {
+          case _: TimeoutException => null.asInstanceOf[A]
         }
-  
-      // wait till all pushes complete
-      val allPushes: Future[Seq[Int]] = Future.collect(futurePushes)
-      
-      // entering gather phase
-      val allSum = 
-        allPushes onSuccess {result =>
-  
-          // pop from all 100 lists in parallel
-          val futurePops: Seq[Future[Int]] =
-            (1 to 100) map {i => 
-              futures {
-                listPop(opsPerClient, "list_" + i)
-              }
-            }
-  
-          // wait till all pops are complete
-          val allPops: Future[Seq[Int]] = Future.collect(futurePops)
-  
-          // compute sum of all integers
-          allPops onSuccess {members => members.sum}
-        }
-      allSum.apply
+      }
     }
 
-The sample test suite based on this implementation gives the following numbers when run on my quad-core, 8GB MBP:
+    // scatter across clients and gather them to do a sum
+    def scatterGatherWithList(opsPerClient: Int)(implicit clients: RedisClientPool) = {
+      // scatter
+      val futurePushes = flow(100, opsPerClient, "list_", listPush)
 
-Operations per run: 400000 elapsed: 3.279764 ops per second: 121959.99468254423
-Operations per run: 1000000 elapsed: 7.746883 ops per second: 129084.17488685448
-Operations per run: 2000000 elapsed: 15.391637 ops per second: 129940.69441736444
+      // concurrent combinator: collect
+      val allPushes = Future.collect(futurePushes)
+
+      // sequential combinator: flatMap
+      val allSum = allPushes flatMap {result =>
+        // gather
+        val futurePops = flow(100, opsPerClient, "list_", listPop)
+        val allPops = Future.collect(futurePops)
+        allPops map {members => members.sum}
+      }
+      allSum.apply
+    }
 
 ## License
 
