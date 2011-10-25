@@ -6,6 +6,9 @@ trait HashOperations { self: Redis =>
   def hset(key: Any, field: Any, value: Any)(implicit format: Format): Boolean =
     send("HSET", List(key, field, value))(asBoolean)
   
+  def hsetnx(key: Any, field: Any, value: Any)(implicit format: Format): Boolean =
+    send("HSETNX", List(key, field, value))(asBoolean)
+  
   def hget[A](key: Any, field: Any)(implicit format: Format, parse: Parse[A]): Option[A] =
     send("HGET", List(key, field))(asBulk)
   
