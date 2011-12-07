@@ -199,4 +199,60 @@ class StringOperationsSpec extends Spec
       }
     }
   }
+
+  describe("setrange") {
+    it("should set value starting from offset") {
+      r.set("key1", "hello world")
+      r.setrange("key1", 6, "redis")
+      r.get("key1") should equal(Some("hello redis"))
+
+      r.setrange("key2", 6, "redis") should equal(Some(11))
+      r.get("key2").get.trim should equal("redis")
+      r.get("key2").get.length should equal(11)   // zero padding
+    }
+  }
+
+  describe("getrange") {
+    it("should get value starting from start") {
+      r.set("mykey", "This is a string")
+      r.getrange[String]("mykey", 0, 3) should equal(Some("This"))
+      r.getrange[String]("mykey", -3, -1) should equal(Some("ing"))
+      r.getrange[String]("mykey", 0, -1) should equal(Some("This is a string"))
+      r.getrange[String]("mykey", 10, 100) should equal(Some("string"))
+    }
+  }
+
+  describe("strlen") {
+    it("should return the length of the value") {
+      r.set("mykey", "Hello World")
+      r.strlen("mykey") should equal(Some(11))
+      r.strlen("nonexisting") should equal(Some(0))
+    }
+  }
+
+  describe("append") {
+    it("should append value to that of a key") {
+      r.exists("mykey") should equal(false)
+      r.append("mykey", "Hello") should equal(Some(5))
+      r.append("mykey", " World") should equal(Some(11))
+      r.get[String]("mykey") should equal(Some("Hello World"))
+    }
+  }
+
+  describe("setbit") {
+    it("should set of clear the bit at offset in the string value stored at the key") {
+      r.setbit("mykey", 7, 1) should equal(Some(0))
+      r.setbit("mykey", 7, 0) should equal(Some(1))
+      String.format("%x", new java.math.BigInteger(r.get("mykey").get.getBytes("UTF-8"))) should equal("0")
+    }
+  }
+
+  describe("getbit") {
+    it("should return the bit value at offset in the string") {
+      r.setbit("mykey", 7, 1) should equal(Some(0))
+      r.getbit("mykey", 0) should equal(Some(0))
+      r.getbit("mykey", 7) should equal(Some(1))
+      r.getbit("mykey", 100) should equal(Some(0))
+    }
+  }
 }
