@@ -97,6 +97,106 @@ Let us look at some serialization stuff:
     scala> r.get[Array[Byte]]("keey")
     res5: Option[Array[Byte]] = None
 
+## Using Client Pooling
+
+scala-redis is a blocking client, which serves the purpose in most of the cases since Redis is also single threaded. But there may be situations when clients need to manage multiple RedisClients to ensure thread-safe programming.
+
+scala-redis includes a Pool implementation which can be used to serve this purpose. Based on Apache Commons Pool implementation, RedisClientPool maintains a pool of instances of RedisClient, which can grow based on demand. Here's a sample usage ..
+
+    val clients = new RedisClientPool("localhost", 6379)
+    def lp(msgs: List[String]) = {
+      clients.withClient {
+        client => {
+          msgs.foreach(client.lpush("list-l", _))
+          client.llen("list-l")
+        }
+      }
+    }
+
+Using a combination of pooling and futures, scala-redis can be throttled for more parallelism. This is the typical recommended strategy if you are looking forward to scale up using this redis client. Here's a sample usage .. we are doing a parallel throttle of an lpush, rpush and set operations in redis, each repeated a number of times ..
+
+If we have a pool initialized, then we can use the pool to repeat the following operations. 
+
+    // lpush
+    def lp(msgs: List[String]) = {
+      clients.withClient {
+        client => {
+          msgs.foreach(client.lpush("list-l", _))
+          client.llen("list-l")
+        }
+      }
+    }
+
+    // rpush
+    def rp(msgs: List[String]) = {
+      clients.withClient {
+        client => {
+          msgs.foreach(client.rpush("list-r", _))
+          client.llen("list-r")
+        }
+      }
+    }
+
+    // set
+    def set(msgs: List[String]) = {
+      clients.withClient {
+        client => {
+          var i = 0
+          msgs.foreach { v =>
+            client.set("key-%d".format(i), v)
+            i += 1
+          }
+          Some(1000)
+        }
+      }
+    }
+
+And here's the snippet that throttles our redis server with the above operations in a non blocking mode using Scala futures:
+
+    val l = (0 until 5000).map(_.toString).toList
+    val fns = List[List[String] => Option[Int]](lp, rp, set)
+    val tasks = fns map (fn => scala.actors.Futures.future { fn(l) })
+    val results = tasks map (future => future.apply())
+
+## Implementing asynchronous patterns using pooling and Futures
+
+scala-redis is a blocking client for Redis. But you can develop high performance asynchronous patterns of computation using scala-redis and Futures. RedisClientPool allows you to work with multiple RedisClient instances and Futures offer a non-blocking semantics on top of this. The combination can give you good numbers for implementing common usage patterns like scatter/gather. Here's an example that you will also find in the test suite. It uses the scatter/gather technique to do loads of push across many lists in parallel. The gather phase pops from all those lists in parallel and does some compuation over them.
+
+Here's the main routine that implements the pattern:
+
+    implicit val timer = new JavaTimer
+
+    // set up Executors
+    val futures = FuturePool(Executors.newFixedThreadPool(8))
+
+    private[this] def flow[A](noOfRecipients: Int, opsPerClient: Int, keyPrefix: String, 
+      fn: (Int, String) => A) = {
+      (1 to noOfRecipients) map {i => 
+        futures {
+          fn(opsPerClient, "list_" + i)
+        }.within(40.seconds) handle {
+          case _: TimeoutException => null.asInstanceOf[A]
+        }
+      }
+    }
+
+    // scatter across clients and gather them to do a sum
+    def scatterGatherWithList(opsPerClient: Int)(implicit clients: RedisClientPool) = {
+      // scatter
+      val futurePushes = flow(100, opsPerClient, "list_", listPush)
+
+      // concurrent combinator: collect
+      val allPushes = Future.collect(futurePushes)
+
+      // sequential combinator: flatMap
+      val allSum = allPushes flatMap {result =>
+        // gather
+        val futurePops = flow(100, opsPerClient, "list_", listPop)
+        val allPops = Future.collect(futurePops)
+        allPops map {members => members.sum}
+      }
+      allSum.apply
+    }
 
 ## License
 

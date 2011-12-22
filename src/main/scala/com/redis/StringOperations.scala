@@ -61,4 +61,36 @@ trait StringOperations { self: Redis =>
   // set the respective key value pairs. Noop if any key exists
   def msetnx(kvs: (Any, Any)*)(implicit format: Format) =
     send("MSETNX", kvs.foldRight(List[Any]()){ case ((k,v),l) => k :: v :: l })(asBoolean)
+
+  // SETRANGE key offset value
+  // Overwrites part of the string stored at key, starting at the specified offset, 
+  // for the entire length of value.
+  def setrange(key: Any, offset: Int, value: Any)(implicit format: Format): Option[Int] =
+    send("SETRANGE", List(key, offset, value))(asInt)
+
+  // GETRANGE key start end
+  // Returns the substring of the string value stored at key, determined by the offsets 
+  // start and end (both are inclusive).
+  def getrange[A](key: Any, start: Int, end: Int)(implicit format: Format, parse: Parse[A]): Option[A] =
+    send("GETRANGE", List(key, start, end))(asBulk)
+
+  // STRLEN key
+  // gets the length of the value associated with the key
+  def strlen(key: Any)(implicit format: Format): Option[Int] =
+    send("STRLEN", List(key))(asInt)
+
+  // APPEND KEY (key, value)
+  // appends the key value with the specified value.
+  def append(key: Any, value: Any)(implicit format: Format): Option[Int] =
+    send("APPEND", List(key, value))(asInt)
+
+  // GETBIT key offset
+  // Returns the bit value at offset in the string value stored at key
+  def getbit(key: Any, offset: Int)(implicit format: Format): Option[Int] =
+    send("GETBIT", List(key, offset))(asInt)
+
+  // SETBIT key offset value
+  // Sets or clears the bit at offset in the string value stored at key
+  def setbit(key: Any, offset: Int, value: Any)(implicit format: Format): Option[Int] =
+    send("SETBIT", List(key, offset, value))(asInt)
 }
