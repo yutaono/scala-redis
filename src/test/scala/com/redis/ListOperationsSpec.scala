@@ -175,7 +175,7 @@ class ListOperationsSpec extends Spec
       r.lpush("list-1", "5") should equal(Some(2))
       r.lpush("list-1", "4") should equal(Some(3))
       val thrown = evaluating { r.lset("list-1", 12, "30") } should produce [Exception]
-      thrown.getMessage should equal("ERR no such key")
+      thrown.getMessage should equal("ERR index out of range")
     }
   }
 

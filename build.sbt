@@ -2,7 +2,7 @@ name := "RedisClient"
 
 organization := "net.debasishg"
 
-version := "2.4.2"
+version := "2.5"
 
 crossScalaVersions := Seq("2.9.1", "2.9.0", "2.8.1", "2.8.0")
 

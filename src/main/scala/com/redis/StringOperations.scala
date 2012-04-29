@@ -93,4 +93,9 @@ trait StringOperations { self: Redis =>
   // Sets or clears the bit at offset in the string value stored at key
   def setbit(key: Any, offset: Int, value: Any)(implicit format: Format): Option[Int] =
     send("SETBIT", List(key, offset, value))(asInt)
+
+  // SET EXPIRE (key, ttl)
+  // sets the ttl for the key
+  def expire(key: Any, ttl: Any)(implicit format: Format): Boolean =
+    send("EXPIRE", List(key,ttl))(asBoolean)
 }
