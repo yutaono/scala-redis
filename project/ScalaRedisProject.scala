@@ -3,13 +3,15 @@ import Keys._
 
 object ScalaRedisProject extends Build
 {
+  import Resolvers._
   lazy val root = Project("RedisClient", file(".")) settings(coreSettings : _*)
 
   lazy val commonSettings: Seq[Setting[_]] = Seq(
     organization := "net.debasishg",
     version := "2.6",
     scalaVersion := "2.9.2",
-    scalacOptions ++= Seq("-deprecation", "-unchecked")
+    scalacOptions ++= Seq("-deprecation", "-unchecked"),
+    resolvers ++= Seq(twitterRepo)
   )
 
   lazy val coreSettings = commonSettings ++ template ++ Seq(
@@ -21,8 +23,8 @@ object ScalaRedisProject extends Build
       "log4j"          % "log4j"         % "1.2.16" % "provided",
       "junit"          % "junit"         % "4.8.1"  % "test",
       "org.scalatest"  % "scalatest_2.9.1" % "1.6.1" % "test",
-      "com.twitter"    % "util"          % "1.11.4" % "test" intransitive(),
-      "com.twitter"    % "finagle-core"  % "1.9.0" % "test"),
+      "com.twitter"    % "util_2.9.1"    % "1.12.13" % "test" intransitive(),
+      "com.twitter"    % "finagle-core_2.9.1"  % "4.0.2" % "test"),
 
     parallelExecution in Test := false,
     publishTo <<= version { (v: String) => 
@@ -83,4 +85,8 @@ object ScalaRedisProject extends Build
       toError(r.run("fmpp.tools.CommandLine", cp.files, arguments, s.log))
       (output ** filter).get
   }
+}
+
+object Resolvers {
+  val twitterRepo = "release" at "http://maven.twttr.com"
 }
