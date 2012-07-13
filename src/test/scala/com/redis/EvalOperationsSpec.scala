@@ -40,6 +40,12 @@ class EvalOperationsSpec extends Spec
       r.evalMultiBulk[String]("return { ARGV[1],ARGV[2] };", List(), List("a", "b")) should be(Some(List(Some("a"), Some("b"))))
     }
 
+    it("should eval lua code and get a string array reply from its arguments & keys") {
+      r.set("a", "a")
+      r.set("a", "a")
+      r.evalMultiBulk[String]("return { KEYS[1],KEYS[2],ARGV[1],ARGV[2] };", List("a", "b"), List("a", "b")) should be(Some(List(Some("a"), Some("b"), Some("a"), Some("b"))))
+    }
+
     it("should eval lua code and get a string reply when passing keys") {
       r.set("a", "b")
       r.evalBulk[String]("return redis.call('get', KEYS[1]);", List("a"), List()) should be(Some("b"))
