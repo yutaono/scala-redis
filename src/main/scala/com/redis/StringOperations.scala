@@ -94,6 +94,12 @@ trait StringOperations { self: Redis =>
   def setbit(key: Any, offset: Int, value: Any)(implicit format: Format): Option[Int] =
     send("SETBIT", List(key, offset, value))(asInt)
 
+  def bitop(op: String, destKey: Any, srcKeys: Any*)(implicit format: Format): Option[Int] =
+    send("BITOP", op :: destKey :: srcKeys.toList)(asInt)
+
+  def bitcount(key: Any, range: Option[(Int, Int)] = None)(implicit format: Format): Option[Int] =
+    send("BITCOUNT", List[Any](key) ++ (range.map { r => List[Any](r._1, r._2) } getOrElse List[Any]()))(asInt)
+
   // SET EXPIRE (key, ttl)
   // sets the ttl for the key
   def expire(key: Any, ttl: Any)(implicit format: Format): Boolean =
