@@ -103,9 +103,4 @@ trait StringOperations { self: Redis =>
   // Count the number of set bits in the given key within the optional range
   def bitcount(key: Any, range: Option[(Int, Int)] = None)(implicit format: Format): Option[Int] =
     send("BITCOUNT", List[Any](key) ++ (range.map { r => List[Any](r._1, r._2) } getOrElse List[Any]()))(asInt)
-
-  // SET EXPIRE (key, ttl)
-  // sets the ttl for the key
-  def expire(key: Any, ttl: Any)(implicit format: Format): Boolean =
-    send("EXPIRE", List(key,ttl))(asBoolean)
 }

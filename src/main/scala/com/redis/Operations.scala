@@ -57,8 +57,8 @@ trait Operations { self: Redis =>
 
   // EXPIRE (key, expiry)
   // sets the expire time (in sec.) for the specified key.
-  def expire(key: Any, expiry: Int)(implicit format: Format): Boolean =
-    send("EXPIRE", List(key, expiry))(asBoolean)
+  def expire(key: Any, ttl: Int)(implicit format: Format): Boolean =
+    send("EXPIRE", List(key, ttl))(asBoolean)
 
   // TTL (key)
   // returns the remaining time to live of a key that has a timeout
