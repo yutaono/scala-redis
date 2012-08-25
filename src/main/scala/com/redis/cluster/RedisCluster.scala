@@ -56,11 +56,11 @@ object NoOpKeyTag extends KeyTag {
   def tag(key: Seq[Byte]) = Some(key)
 }
 
-abstract class RedisCluster(hosts: String*) extends RedisClient {
+abstract class RedisCluster(hosts: String*) extends RedisCommand {
 
   // not needed at cluster level
-  // override val host = null
-  // override val port = 0
+  override val host = null
+  override val port = 0
 
   // abstract val
   val keyTag: Option[KeyTag]
