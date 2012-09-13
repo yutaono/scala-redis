@@ -43,40 +43,60 @@ trait SortedSetOperations { self: Redis =>
   // ZRANGEBYSCORE
   // 
   def zrangebyscore[A](key: Any,
-                       min: Double = Double.NegativeInfinity,
-                       minInclusive: Boolean = true,
-                       max: Double = Double.PositiveInfinity,
-                       maxInclusive: Boolean = true,
-                       limit: Option[(Int, Int)],
-                       sortAs: SortOrder = ASC)(implicit format: Format, parse: Parse[A]): Option[List[A]] = {
+          min: Double = Double.NegativeInfinity,
+          minInclusive: Boolean = true,
+          max: Double = Double.PositiveInfinity,
+          maxInclusive: Boolean = true,
+          limit: Option[(Int, Int)],
+          sortAs: SortOrder = ASC)(implicit format: Format, parse: Parse[A]): Option[List[A]] = {
 
-      val limitEntries = if(!limit.isEmpty) { 
+    val (limitEntries, minParam, maxParam) = 
+      zrangebyScoreWithScoreInternal(min, minInclusive, max, maxInclusive, limit)
+
+    val params = sortAs match {
+      case ASC => ("ZRANGEBYSCORE", key :: minParam :: maxParam :: limitEntries)
+      case DESC => ("ZREVRANGEBYSCORE", key :: maxParam :: minParam :: limitEntries)
+    }
+    send(params._1, params._2)(asList.map(_.flatten))
+  }
+
+  def zrangebyscoreWithScore[A](key: Any,
+          min: Double = Double.NegativeInfinity,
+          minInclusive: Boolean = true,
+          max: Double = Double.PositiveInfinity,
+          maxInclusive: Boolean = true,
+          limit: Option[(Int, Int)],
+          sortAs: SortOrder = ASC)(implicit format: Format, parse: Parse[A]): Option[List[(A, Double)]] = {
+
+    val (limitEntries, minParam, maxParam) = 
+      zrangebyScoreWithScoreInternal(min, minInclusive, max, maxInclusive, limit)
+
+    val params = sortAs match {
+      case ASC => ("ZRANGEBYSCORE", key :: minParam :: maxParam :: "WITHSCORES" :: limitEntries)
+      case DESC => ("ZREVRANGEBYSCORE", key :: maxParam :: minParam :: "WITHSCORES" :: limitEntries)
+    }
+    send(params._1, params._2)(asListPairs(parse, Parse.Implicits.parseDouble).map(_.flatten))
+  }
+
+  private def zrangebyScoreWithScoreInternal[A](
+          min: Double = Double.NegativeInfinity,
+          minInclusive: Boolean = true,
+          max: Double = Double.PositiveInfinity,
+          maxInclusive: Boolean = true,
+          limit: Option[(Int, Int)])
+          (implicit format: Format, parse: Parse[A]): (List[Any], String, String) = {
+
+    val limitEntries = 
+      if(!limit.isEmpty) { 
         "LIMIT" :: limit.toList.flatMap(l => List(l._1, l._2))
       } else { 
         List()
       }
-      // send("ZRANGEBYSCORE", key :: 
-        // Format.formatDouble(min, minInclusive) :: 
-        // Format.formatDouble(max, maxInclusive) ::
-        // limitEntries
-      // )(asList.map(_.flatten))
-      val minParam = Format.formatDouble(min, minInclusive)
-      val maxParam = Format.formatDouble(max, maxInclusive)
-      val params = sortAs match {
-        case ASC => ("ZRANGEBYSCORE", key :: minParam :: maxParam :: limitEntries)
-        case DESC => ("ZREVRANGEBYSCORE", key :: maxParam :: minParam :: limitEntries)
-      }
-      send(params._1, params._2)(asList.map(_.flatten))
-   }
 
-  def zrangebyscoreWithScore[A](key: Any,
-                       min: Double = Double.NegativeInfinity,
-                       minInclusive: Boolean = true,
-                       max: Double = Double.PositiveInfinity,
-                       maxInclusive: Boolean = true,
-                       limit: Option[(Int, Int)])(implicit format: Format, parse: Parse[A]): Option[List[(A, Double)]] =
-    send("ZRANGEBYSCORE", key :: Format.formatDouble(min, minInclusive) :: Format.formatDouble(max, maxInclusive) :: "WITHSCORES" :: limit.toList.flatMap(l => List(l._1, l._2)))(asListPairs(parse, Parse.Implicits.parseDouble).map(_.flatten))
-
+    val minParam = Format.formatDouble(min, minInclusive)
+    val maxParam = Format.formatDouble(max, maxInclusive)
+    (limitEntries, minParam, maxParam)
+  }
 
   // ZRANK
   // ZREVRANK

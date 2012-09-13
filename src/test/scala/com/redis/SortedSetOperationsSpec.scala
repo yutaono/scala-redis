@@ -179,4 +179,22 @@ class SortedSetOperationsSpec extends Spec
         List("yukihiro matsumoto", "richard stallman"))
     }
   }
+
+  describe("zrangebyscoreWithScore") {
+    it ("should return the elements between min and max") {
+      add
+
+      zrangebyscoreWithScore("hackers", 1940, true, 1969, true, None).get should equal(
+        List(("alan kay", 1940.0), ("richard stallman", 1953.0), ("yukihiro matsumoto", 1965.0), ("linus torvalds", 1969.0)))
+
+      zrangebyscoreWithScore("hackers", 1940, true, 1969, true, None, DESC).get should equal(
+        List(("linus torvalds", 1969.0), ("yukihiro matsumoto", 1965.0), ("richard stallman", 1953.0),("alan kay", 1940.0)))
+
+      zrangebyscoreWithScore("hackers", 1940, true, 1969, true, Some(3, 1)).get should equal (
+        List(("linus torvalds", 1969.0)))
+
+      zrangebyscoreWithScore("hackers", 1940, true, 1969, true, Some(3, 1), DESC).get should equal (
+        List(("alan kay", 1940.0)))
+    }
+  }
 }
