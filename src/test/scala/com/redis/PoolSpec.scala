@@ -56,7 +56,7 @@ class PoolSpec extends Spec
           client.set("key-%d".format(i), v)
           i += 1
         }
-        Some(1000)
+        Some(1000L)
       }
     }
   }
@@ -64,7 +64,7 @@ class PoolSpec extends Spec
   describe("pool test") {
     it("should distribute work amongst the clients") {
       val l = (0 until 5000).map(_.toString).toList
-      val fns = List[List[String] => Option[Int]](lp, rp, set)
+      val fns = List[List[String] => Option[Long]](lp, rp, set)
       val tasks = fns map (fn => scala.actors.Futures.future { fn(l) })
       val results = tasks map (future => future.apply())
       results should equal(List(Some(5000), Some(5000), Some(1000)))
