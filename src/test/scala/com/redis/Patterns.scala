@@ -40,7 +40,7 @@ object Patterns {
   }
 
   // set up Executors
-  val system = ActorSystem("ScatterGatterSystem")
+  val system = ActorSystem("ScatterGatherSystem")
   import system.dispatcher
 
   val timeout = 5 minutes
