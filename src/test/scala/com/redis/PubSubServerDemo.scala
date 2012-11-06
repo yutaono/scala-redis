@@ -17,7 +17,7 @@ object Sub {
   println("starting subscription service ..")
   val system = ActorSystem("sub")
   val r = new RedisClient("localhost", 6379)
-  val s = system.actorOf(Props(new Publisher(r)))
+  val s = system.actorOf(Props(new Subscriber(r)))
   s ! Register(callback) 
 
   def sub(channels: String*) = {
