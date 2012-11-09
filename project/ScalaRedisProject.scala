@@ -10,22 +10,43 @@ object ScalaRedisProject extends Build
     organization := "net.debasishg",
     version := "2.7",
     scalaVersion := "2.10.0-RC2",
-    // scalaBinaryVersion := "2.10.0-RC1",
-    scalacOptions ++= Seq("-deprecation", "-unchecked")
+    crossScalaVersions := Seq("2.10.0-RC2", "2.9.2", "2.9.1"),
+
+    scalacOptions <++= scalaVersion.map {sv =>
+      if (sv contains "2.10") Seq("-deprecation", "-unchecked", "-feature", "-language:postfixOps")
+      else Seq("-deprecation", "-unchecked")
+    },
+
+    resolvers ++= Seq(akkaRepo)
   )
 
   lazy val coreSettings = commonSettings ++ Seq(
     name := "RedisClient",
 
-    libraryDependencies ++= Seq("commons-pool" % "commons-pool" % "1.6",
-      "org.scala-lang"    %  "scala-actors" % "2.10.0-RC2",
-      "com.typesafe.akka" %  "akka-actor_2.10.0-RC2"   % "2.1.0-RC2",
-      "org.slf4j"         %  "slf4j-api"     % "1.6.6",
-      "org.slf4j"         %  "slf4j-log4j12" % "1.6.6"      % "provided",
-      "log4j"             %  "log4j"         % "1.2.16"     % "provided",
-      "junit"             %  "junit"         % "4.8.1"      % "test",
-      "org.scalatest"     % "scalatest_2.10.0-RC2"     % "2.0.M4"        % "test"),
+    libraryDependencies <<= scalaVersion {v =>
+      if (v contains "2.10")
+        Seq(
+          "commons-pool"      % "commons-pool"             % "1.6",
+          "org.scala-lang"    %  "scala-actors"            % "2.10.0-RC2",
+          "com.typesafe.akka" %  "akka-actor_2.10.0-RC2"   % "2.1.0-RC2",
+          "org.slf4j"         %  "slf4j-api"               % "1.6.6",
+          "org.slf4j"         %  "slf4j-log4j12"           % "1.6.6"      % "provided",
+          "log4j"             %  "log4j"                   % "1.2.16"     % "provided",
+          "junit"             %  "junit"                   % "4.8.1"      % "test",
+          "org.scalatest"     %  "scalatest_2.10.0-RC2"    % "2.0.M4"     % "test")
+      else
+        Seq(
+          "commons-pool"      % "commons-pool"             % "1.6",
+          "com.typesafe.akka" %  "akka-actor"              % "2.0.3",
+          "org.scala-lang"    %  "scala-library"           % v,
+          "org.slf4j"         %  "slf4j-api"               % "1.6.6",
+          "org.slf4j"         %  "slf4j-log4j12"           % "1.6.6"      % "provided",
+          "log4j"             %  "log4j"                   % "1.2.16"     % "provided",
+          "junit"             %  "junit"                   % "4.8.1"      % "test",
+          "org.scalatest"     %  ("scalatest_" + v)          % "2.0.M4"      % "test")
+    },
 
+    excludeFilter in Test in unmanagedSources ~= { _ || "Patterns*.scala" },
     parallelExecution in Test := false,
     publishTo <<= version { (v: String) => 
       val nexus = "https://oss.sonatype.org/" 
@@ -58,4 +79,8 @@ object ScalaRedisProject extends Build
       </developers>),
     unmanagedResources in Compile <+= baseDirectory map { _ / "LICENSE" }
   )
+}
+
+object Resolvers {
+  val akkaRepo = "typesafe repo" at "http://repo.typesafe.com/typesafe/releases/"
 }
