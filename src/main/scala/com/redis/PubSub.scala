@@ -53,7 +53,7 @@ trait PubSub { self: Redis =>
           }
         }
       } catch {
-        case e => fn(E(e))
+        case e: Throwable => fn(E(e))
       }
     }
   }

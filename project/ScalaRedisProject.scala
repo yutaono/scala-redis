@@ -9,8 +9,8 @@ object ScalaRedisProject extends Build
   lazy val commonSettings: Seq[Setting[_]] = Seq(
     organization := "net.debasishg",
     version := "2.7",
-    scalaVersion := "2.10.0-RC1",
-    scalaBinaryVersion := "2.10.0-RC1",
+    scalaVersion := "2.10.0-RC2",
+    // scalaBinaryVersion := "2.10.0-RC1",
     scalacOptions ++= Seq("-deprecation", "-unchecked")
   )
 
@@ -18,12 +18,13 @@ object ScalaRedisProject extends Build
     name := "RedisClient",
 
     libraryDependencies ++= Seq("commons-pool" % "commons-pool" % "1.6",
-      "com.typesafe.akka" %%  "akka-actor"   % "2.1.0-RC1",
+      "org.scala-lang"    %  "scala-actors" % "2.10.0-RC2",
+      "com.typesafe.akka" %  "akka-actor_2.10.0-RC2"   % "2.1.0-RC2",
       "org.slf4j"         %  "slf4j-api"     % "1.6.6",
       "org.slf4j"         %  "slf4j-log4j12" % "1.6.6"      % "provided",
       "log4j"             %  "log4j"         % "1.2.16"     % "provided",
       "junit"             %  "junit"         % "4.8.1"      % "test",
-      "org.scalatest"     %% "scalatest"     % "1.8"        % "test"),
+      "org.scalatest"     % "scalatest_2.10.0-RC2"     % "2.0.M4"        % "test"),
 
     parallelExecution in Test := false,
     publishTo <<= version { (v: String) => 

@@ -34,7 +34,7 @@ trait IO extends Log {
       in = new BufferedInputStream(socket.getInputStream)
       true
     } catch {
-      case x =>
+      case x: Throwable =>
         clearFd
         throw new RuntimeException(x)
     }
@@ -49,7 +49,7 @@ trait IO extends Log {
       clearFd
       true
     } catch {
-      case x =>
+      case x: Throwable =>
         false
     }
   }
@@ -72,7 +72,7 @@ trait IO extends Log {
         os.write(data)
         os.flush
       } catch {
-        case x => throw new RedisConnectionException("connection is closed. write error")
+        case x: Throwable => throw new RedisConnectionException("connection is closed. write error")
       }
     }
   }
