@@ -112,7 +112,15 @@ abstract class RedisCluster(hosts: String*) extends RedisCommand {
     Some((key :: keys.toList).groupBy(nodeForKey).foldLeft(0l) { case (t,(n,ks)) => n.del(ks.head,ks.tail:_*).map(t+).getOrElse(t) })
   override def getType(key: Any)(implicit format: Format) = nodeForKey(key).getType(key)
   override def expire(key: Any, expiry: Int)(implicit format: Format) = nodeForKey(key).expire(key, expiry)
+  override def expireat(key: Any, expiry: Long)(implicit format: Format) = nodeForKey(key).expireat(key, expiry)
+  override def pexpire(key: Any, expiry: Int)(implicit format: Format) = nodeForKey(key).pexpire(key, expiry)
+  override def pexpireat(key: Any, expiry: Long)(implicit format: Format) = nodeForKey(key).pexpireat(key, expiry)
   override def select(index: Int) = throw new UnsupportedOperationException("not supported on a cluster")
+  override def ttl(key: Any)(implicit format: Format) = nodeForKey(key).ttl(key)
+  override def pttl(key: Any)(implicit format: Format) = nodeForKey(key).pttl(key)
+  override def randomkey[A](implicit parse: Parse[A]) = throw new UnsupportedOperationException("not supported on a cluster")
+  override def randkey[A](implicit parse: Parse[A]) = throw new UnsupportedOperationException("not supported on a cluster")
+
 
   /**
    * NodeOperations
@@ -137,6 +145,7 @@ abstract class RedisCluster(hosts: String*) extends RedisCommand {
   override def get[A](key: Any)(implicit format: Format, parse: Parse[A]) = nodeForKey(key).get(key)
   override def getset[A](key: Any, value: Any)(implicit format: Format, parse: Parse[A]) = nodeForKey(key).getset(key, value)
   override def setnx(key: Any, value: Any)(implicit format: Format) = nodeForKey(key).setnx(key, value)
+  override def setex(key: Any, expiry: Int, value: Any)(implicit format: Format) = nodeForKey(key).setex(key, expiry, value)
   override def incr(key: Any)(implicit format: Format) = nodeForKey(key).incr(key)
   override def incrby(key: Any, increment: Int)(implicit format: Format) = nodeForKey(key).incrby(key, increment)
   override def decr(key: Any)(implicit format: Format) = nodeForKey(key).decr(key)
@@ -155,6 +164,15 @@ abstract class RedisCluster(hosts: String*) extends RedisCommand {
   override def mset(kvs: (Any, Any)*)(implicit format: Format) = kvs.toList.map{ case (k, v) => set(k, v) }.forall(_ == true)
   override def msetnx(kvs: (Any, Any)*)(implicit format: Format) = kvs.toList.map{ case (k, v) => setnx(k, v) }.forall(_ == true)
 
+  override def setrange(key: Any, offset: Int, value: Any)(implicit format: Format) = nodeForKey(key).setrange(key, offset, value)
+  override def getrange[A](key: Any, start: Int, end: Int)(implicit format: Format, parse: Parse[A]) = nodeForKey(key).getrange(key, start, end)
+  override def strlen(key: Any)(implicit format: Format) = nodeForKey(key).strlen(key)
+  override def append(key: Any, value: Any)(implicit format: Format) = nodeForKey(key).append(key, value)
+  override def getbit(key: Any, offset: Int)(implicit format: Format) = nodeForKey(key).getbit(key, offset)
+  override def setbit(key: Any, offset: Int, value: Any)(implicit format: Format) = nodeForKey(key).setbit(key, offset, value) 
+  override def bitop(op: String, destKey: Any, srcKeys: Any*)(implicit format: Format) = throw new UnsupportedOperationException("not supported on a cluster")
+  override def bitcount(key: Any, range: Option[(Int, Int)] = None)(implicit format: Format) = nodeForKey(key).bitcount(key, range)
+
   /**
    * ListOperations
    */
@@ -170,13 +188,19 @@ abstract class RedisCluster(hosts: String*) extends RedisCommand {
   override def rpop[A](key: Any)(implicit format: Format, parse: Parse[A]) = nodeForKey(key).rpop[A](key)
   override def rpoplpush[A](srcKey: Any, dstKey: Any)(implicit format: Format, parse: Parse[A]) = 
     inSameNode(srcKey, dstKey) {n => n.rpoplpush[A](srcKey, dstKey)}
+  override def brpoplpush[A](srcKey: Any, dstKey: Any, timeoutInSeconds: Int)(implicit format: Format, parse: Parse[A]) =
+    inSameNode(srcKey, dstKey) {n => n.brpoplpush[A](srcKey, dstKey, timeoutInSeconds)}
+  override def blpop[K,V](timeoutInSeconds: Int, key: K, keys: K*)(implicit format: Format, parseK: Parse[K], parseV: Parse[V]) =
+    inSameNode((key :: keys.toList): _*) {n => n.blpop[K, V](timeoutInSeconds, key, keys:_*)}
+  override def brpop[K,V](timeoutInSeconds: Int, key: K, keys: K*)(implicit format: Format, parseK: Parse[K], parseV: Parse[V]) =
+    inSameNode((key :: keys.toList): _*) {n => n.brpop[K, V](timeoutInSeconds, key, keys:_*)}
 
   private def inSameNode[T](keys: Any*)(body: RedisClient => T)(implicit format: Format): T = {
     val nodes = keys.toList.map(nodeForKey(_))
     nodes.forall(_ == nodes.head) match {
       case true => body(nodes.head)  // all nodes equal
       case _ => 
-        throw new UnsupportedOperationException("can only occur if both keys map to same node")
+        throw new UnsupportedOperationException("can only occur if all keys map to same node")
     }
   }
 
@@ -213,6 +237,7 @@ abstract class RedisCluster(hosts: String*) extends RedisCommand {
 
   override def smembers[A](key: Any)(implicit format: Format, parse: Parse[A]) = nodeForKey(key).smembers(key)
   override def srandmember[A](key: Any)(implicit format: Format, parse: Parse[A]) = nodeForKey(key).srandmember(key)
+  override def srandmember[A](key: Any, count: Int)(implicit format: Format, parse: Parse[A]) = nodeForKey(key).srandmember(key, count)
 
 
   import Commands._
@@ -245,8 +270,35 @@ abstract class RedisCluster(hosts: String*) extends RedisCommand {
                                 sortAs: SortOrder = ASC)(implicit format: Format, parse: Parse[A]) =
     nodeForKey(key).zrangebyscoreWithScore[A](key, min, minInclusive, max, maxInclusive, limit, sortAs)
 
-  override def zcount(key: Any, min: Double = Double.NegativeInfinity, max: Double = Double.PositiveInfinity, minInclusive: Boolean = true, maxInclusive: Boolean = true)(implicit format: Format): Option[Long] =
-    nodeForKey(key).zcount(key, min, max, minInclusive, maxInclusive)
+  override def zcount(key: Any, min: Double = Double.NegativeInfinity, max: Double = Double.PositiveInfinity, 
+    minInclusive: Boolean = true, maxInclusive: Boolean = true)(implicit format: Format): Option[Long] =
+      nodeForKey(key).zcount(key, min, max, minInclusive, maxInclusive)
+
+  override def zrank(key: Any, member: Any, reverse: Boolean = false)(implicit format: Format) = nodeForKey(key).zrank(key, member, reverse)
+  override def zremrangebyrank(key: Any, start: Int = 0, end: Int = -1)(implicit format: Format) = nodeForKey(key).zremrangebyrank(key, start, end)
+  override def zremrangebyscore(key: Any, start: Double = Double.NegativeInfinity, 
+    end: Double = Double.PositiveInfinity)(implicit format: Format) = nodeForKey(key).zremrangebyscore(key, start, end)
+
+  override def zunionstore(dstKey: Any, keys: Iterable[Any], 
+    aggregate: Aggregate = SUM)(implicit format: Format) = inSameNode((dstKey :: keys.toList):_*) {n => 
+      n.zunionstore(dstKey, keys, aggregate)
+    }
+
+  override def zunionstoreWeighted(dstKey: Any, kws: Iterable[Product2[Any,Double]], 
+    aggregate: Aggregate = SUM)(implicit format: Format) = inSameNode((dstKey :: kws.map(_._1).toList):_*) {n =>
+      n.zunionstoreWeighted(dstKey, kws, aggregate)
+    }
+
+  override def zinterstore(dstKey: Any, keys: Iterable[Any], 
+    aggregate: Aggregate = SUM)(implicit format: Format) = inSameNode((dstKey :: keys.toList):_*) {n => 
+      n.zinterstore(dstKey, keys, aggregate)
+    }
+
+  override def zinterstoreWeighted(dstKey: Any, kws: Iterable[Product2[Any,Double]], 
+    aggregate: Aggregate = SUM)(implicit format: Format) = inSameNode((dstKey :: kws.map(_._1).toList):_*) {n =>
+      n.zinterstoreWeighted(dstKey, kws, aggregate)
+    }
+
 
   /**
    * HashOperations

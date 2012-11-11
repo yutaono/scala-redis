@@ -22,7 +22,12 @@ trait Operations { self: Redis =>
 
   // RANDKEY
   // return a randomly selected key from the currently selected DB.
-  def randkey[A](implicit parse: Parse[A]): Option[A] =
+  @deprecated("use randomkey", "2.8") def randkey[A](implicit parse: Parse[A]): Option[A] =
+    send("RANDOMKEY")(asBulk)
+
+  // RANDOMKEY
+  // return a randomly selected key from the currently selected DB.
+  def randomkey[A](implicit parse: Parse[A]): Option[A] =
     send("RANDOMKEY")(asBulk)
 
   // RENAME (oldkey, newkey)
@@ -60,10 +65,30 @@ trait Operations { self: Redis =>
   def expire(key: Any, ttl: Int)(implicit format: Format): Boolean =
     send("EXPIRE", List(key, ttl))(asBoolean)
 
+  // PEXPIRE (key, expiry)
+  // sets the expire time (in milli sec.) for the specified key.
+  def pexpire(key: Any, ttlInMillis: Int)(implicit format: Format): Boolean =
+    send("PEXPIRE", List(key, ttlInMillis))(asBoolean)
+
+  // EXPIREAT (key, unix timestamp)
+  // sets the expire time for the specified key.
+  def expireat(key: Any, timestamp: Long)(implicit format: Format): Boolean =
+    send("EXPIREAT", List(key, timestamp))(asBoolean)
+
+  // PEXPIREAT (key, unix timestamp)
+  // sets the expire timestamp in millis for the specified key.
+  def pexpireat(key: Any, timestampInMillis: Long)(implicit format: Format): Boolean =
+    send("PEXPIREAT", List(key, timestampInMillis))(asBoolean)
+
   // TTL (key)
   // returns the remaining time to live of a key that has a timeout
   def ttl(key: Any)(implicit format: Format): Option[Long] =
     send("TTL", List(key))(asLong)
+
+  // PTTL (key)
+  // returns the remaining time to live of a key that has a timeout in millis
+  def pttl(key: Any)(implicit format: Format): Option[Long] =
+    send("PTTL", List(key))(asLong)
 
   // SELECT (index)
   // selects the DB to connect, defaults to 0 (zero).

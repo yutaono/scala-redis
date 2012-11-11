@@ -80,4 +80,9 @@ trait SetOperations { self: Redis =>
   // Return a random element from a Set
   def srandmember[A](key: Any)(implicit format: Format, parse: Parse[A]): Option[A] =
     send("SRANDMEMBER", List(key))(asBulk)
+
+  // SRANDMEMBER
+  // Return multiple random elements from a Set (since 2.6)
+  def srandmember[A](key: Any, count: Int)(implicit format: Format, parse: Parse[A]): Option[List[Option[A]]] =
+    send("SRANDMEMBER", List(key, count))(asList)
 }

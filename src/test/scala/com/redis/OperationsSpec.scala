@@ -51,7 +51,7 @@ class OperationsSpec extends FunSpec
     it("should give") {
       r.set("anshin-1", "debasish")
       r.set("anshin-2", "maulindu")
-      r.randkey match {
+      r.randomkey match {
         case Some(s: String) => s should startWith("anshin") 
         case None => fail("should have 2 elements")
       }

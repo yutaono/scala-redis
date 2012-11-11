@@ -51,9 +51,9 @@ private [redis] trait Reply {
   }
 
   val longReply: Reply[Option[Long]] = {
-  case (INT, s) => Some(Parsers.parseLong(s))
-  case (BULK, s) if Parsers.parseInt(s) == -1 => None
-    }
+    case (INT, s) => Some(Parsers.parseLong(s))
+    case (BULK, s) if Parsers.parseInt(s) == -1 => None
+  }
 
   val singleLineReply: SingleReply = {
     case (SINGLE, s) => Some(s)

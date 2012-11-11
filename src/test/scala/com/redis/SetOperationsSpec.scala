@@ -303,4 +303,29 @@ class SetOperationsSpec extends FunSpec
       r.srandmember("set-1") should equal(None)
     }
   }
+
+  describe("srandmember with count") {
+    it("should return a list of random members") {
+      r.sadd("set-1", "one").get should equal(1)
+      r.sadd("set-1", "two").get should equal(1)
+      r.sadd("set-1", "three").get should equal(1)
+      r.sadd("set-1", "four").get should equal(1)
+      r.sadd("set-1", "five").get should equal(1)
+      r.sadd("set-1", "six").get should equal(1)
+      r.sadd("set-1", "seven").get should equal(1)
+      r.sadd("set-1", "eight").get should equal(1)
+
+      r.srandmember("set-1", 2).get.size should equal(2)
+
+      // returned elements should be unique
+      val l = r.srandmember("set-1", 4).get
+      l.size should equal(l.toSet.size)
+
+      // returned elements may have duplicates
+      r.srandmember("set-1", -4).get.toSet.size should (be <= (4))
+
+      // if supplied count > size, then whole set is returned
+      r.srandmember("set-1", 24).get.toSet.size should equal(8)
+    }
+  }
 }
