@@ -56,7 +56,9 @@ object NoOpKeyTag extends KeyTag {
   def tag(key: Seq[Byte]) = Some(key)
 }
 
-abstract class RedisCluster(hosts: String*) extends RedisCommand {
+case class ClusterNode(nodename: String, host: String, port: Int, database: Int = 0, maxIdle: Int = 8)
+
+abstract class RedisCluster(hosts: ClusterNode*) extends RedisCommand {
 
   // not needed at cluster level
   override val host = null
@@ -70,12 +72,11 @@ abstract class RedisCluster(hosts: String*) extends RedisCommand {
 
   // instantiating a cluster will automatically connect participating nodes to the server
   val clients = hosts.toList.map {h => 
-    val hp = h.split(":")
-    new RedisClientPool(hp(0), hp(1).toInt)
+    new IdentifiableRedisClientPool(h.nodename, h.host, h.port, h.maxIdle, h.database)
   }
 
   // the hash ring will instantiate with the nodes up and added
-  val hr = HashRing[RedisClientPool](clients, POINTS_PER_SERVER)
+  val hr = HashRing[IdentifiableRedisClientPool](clients, POINTS_PER_SERVER)
 
   // get node for the key
   def nodeForKey(key: Any)(implicit format: Format) = {
@@ -84,9 +85,13 @@ abstract class RedisCluster(hosts: String*) extends RedisCommand {
   }
 
   // add a server
-  def addServer(server: String) = {
-    val hp = server.split(":")
-    hr addNode new RedisClientPool(hp(0), hp(1).toInt)
+  def addServer(server: ClusterNode) = {
+    hr addNode new IdentifiableRedisClientPool(server.nodename, server.host, server.port, server.maxIdle, server.database)
+  }
+
+  // replace a server
+  def replaceServer(server: ClusterNode) = {
+    hr replaceNode new IdentifiableRedisClientPool(server.nodename, server.host, server.port, server.maxIdle, server.database)
   }
 
   /**

@@ -24,6 +24,17 @@ case class HashRing[T](nodes: List[T], replicas: Int) {
     }
   }
 
+  def replaceNode(node: T) = {
+    for (i <- 0 until cluster.size){
+      if (cluster.toString().equals(node.toString)){
+        cluster(i) = node
+      }
+    }
+    (1 to replicas).foreach {replica =>
+      ring += (nodeHashFor(node, replica) -> node)
+    }
+  }
+
   /*
    * Removes node from the ring
    */
