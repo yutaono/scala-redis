@@ -12,13 +12,13 @@ import collection.mutable.WrappedArray
 
 
 @RunWith(classOf[JUnitRunner])
-class RedisClusterSpec extends FunSpec 
+class RedisShardsSpec extends FunSpec 
                        with ShouldMatchers
                        with BeforeAndAfterEach
                        with BeforeAndAfterAll {
 
-  val nodes = Array(ClusterNode("node1", "localhost", 6379), ClusterNode("node2", "localhost", 6380), ClusterNode("node3", "localhost", 6381))
-  val r = new RedisCluster(new WrappedArray.ofRef(nodes): _*) {
+  val nodes = List(ClusterNode("node1", "localhost", 6379), ClusterNode("node2", "localhost", 6380), ClusterNode("node3", "localhost", 6381))
+  val r = new RedisShards(nodes) {
     val keyTag = Some(RegexKeyTag)
   }
 
