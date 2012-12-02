@@ -56,7 +56,9 @@ object NoOpKeyTag extends KeyTag {
   def tag(key: Seq[Byte]) = Some(key)
 }
 
-case class ClusterNode(nodename: String, host: String, port: Int, database: Int = 0, maxIdle: Int = 8)
+case class ClusterNode(nodename: String, host: String, port: Int, database: Int = 0, maxIdle: Int = 8){
+  override def toString = nodename
+}
 
 abstract class RedisCluster(hosts: ClusterNode*) extends RedisCommand {
 

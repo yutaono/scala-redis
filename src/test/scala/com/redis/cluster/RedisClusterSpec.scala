@@ -37,7 +37,7 @@ class RedisClusterSpec extends FunSpec
       val l = List("debasish", "maulindu", "ramanendu", "nilanjan", "tarun", "tarun", "tarun")
 
       // last 3 should map to the same node
-      l.map(r.nodeForKey(_)).reverse.slice(0, 3).forall(_.toString == "localhost:6380") should equal(true)
+      l.map(r.nodeForKey(_)).reverse.slice(0, 3).forall(_.toString == "node2") should equal(true)
 
       // set
       l foreach (s => r.processForKey(s)(_.set(s, "working in anshin")) should equal(true))

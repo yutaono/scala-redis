@@ -52,7 +52,7 @@ abstract class RedisShards(val hosts: List[ClusterNode]) extends RedisCommand {
       clients(server.nodename).close
       clients = clients - server.nodename
     }
-    clients = clients + (server.nodename -> new IdentifiableRedisClientPool(server.nodename, server.host, server.port, server.maxIdle, server.database))
+    clients = clients + (server.nodename -> new RedisClientPool(server.host, server.port, server.maxIdle, server.database))
     hr replaceNode server
   }
 
