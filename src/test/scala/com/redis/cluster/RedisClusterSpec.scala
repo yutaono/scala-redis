@@ -104,6 +104,9 @@ class RedisClusterSpec extends FunSpec
     }
 
     it("replace node should not change hash ring order"){
+      val r = new RedisCluster(new WrappedArray.ofRef(nodes): _*) {
+		  val keyTag = Some(RegexKeyTag)
+	  }
       r.set("testkey1", "testvalue2")
       r.get("testkey1") should equal (Some("testvalue2"))
 
@@ -122,6 +125,32 @@ class RedisClusterSpec extends FunSpec
       val oldnode = nodes.filter(_.nodename.equals(nodename))(0)
       r.replaceServer(oldnode)
       r.get("testkey1") should equal (Some("testvalue2"))
+    }
+    
+    it("remove failure node should change hash ring order so that key on failure node should be served by other running nodes"){
+	  val r = new RedisCluster(new WrappedArray.ofRef(nodes): _*) {
+		  val keyTag = Some(RegexKeyTag)
+	  }
+      r.set("testkey1", "testvalue2")
+      r.get("testkey1") should equal (Some("testvalue2"))
+
+      val nodename = r.hr.getNode(formattedKey("testkey1")).toString
+
+      //replaced master with slave on the same node
+      r.removeServer(nodename)
+      r.get("testkey1") should equal (None)
+
+      r.set("testkey1", "testvalue2")
+      r.get("testkey1") should equal (Some("testvalue2"))
+    }
+    
+    it("list nodes should return the running nodes but not configured nodes"){
+      val r = new RedisCluster(new WrappedArray.ofRef(nodes): _*) {
+		  val keyTag = Some(RegexKeyTag)
+	  }
+      r.listServers.toSet should equal (nodes.toSet)
+      r.removeServer("node1")
+      r.listServers.toSet should equal (nodes.filterNot(_.nodename.equals("node1")).toSet)
     }
   }
 }
