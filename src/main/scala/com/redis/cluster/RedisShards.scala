@@ -27,13 +27,13 @@ abstract class RedisShards(val hosts: List[ClusterNode]) extends RedisCommand {
   private var clients = hosts.map { h => (h.nodename, new IdentifiableRedisClientPool(h)) } toMap
 
   // the hash ring will instantiate with the nodes up and added
-  val hr = HashRing[ClusterNode](hosts, POINTS_PER_SERVER)
+  val hr = HashRing[String](hosts.map(_.nodename), POINTS_PER_SERVER)
 
   // get node for the key
   def nodeForKey(key: Any)(implicit format: Format): RedisClientPool = {
     val bKey = format(key)
     val selectedNode = hr.getNode(keyTag.flatMap(_.tag(bKey)).getOrElse(bKey))
-    clients(selectedNode.nodename)
+    clients(selectedNode)
   }
   
   def processForKey[T](key: Any)(body: RedisCommand => T)(implicit format: Format): T = {
@@ -43,7 +43,7 @@ abstract class RedisShards(val hosts: List[ClusterNode]) extends RedisCommand {
   // add a server
   def addServer(server: ClusterNode) = {
     clients = clients + (server.nodename -> new IdentifiableRedisClientPool(server))
-    hr addNode server
+    hr addNode server.nodename
   }
 
   // replace a server
@@ -53,7 +53,6 @@ abstract class RedisShards(val hosts: List[ClusterNode]) extends RedisCommand {
       clients = clients - server.nodename
     }
     clients = clients + (server.nodename -> new IdentifiableRedisClientPool(server))
-    hr replaceNode server
   }
   
   //remove a server
@@ -62,13 +61,13 @@ abstract class RedisShards(val hosts: List[ClusterNode]) extends RedisCommand {
       val pool = clients(nodename)
       pool.close
       clients = clients - nodename
-      hr removeNode(pool.node)
+      hr removeNode(nodename)
     }    
   }
   
   //list all running servers
   def listServers: List[ClusterNode] = {
-    hr.cluster.toList
+    clients.values.map(_.node).toList
   }
 
   /**

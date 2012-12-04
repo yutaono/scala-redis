@@ -119,6 +119,8 @@ class RedisClusterSpec extends FunSpec
 
       //replaced master with slave on the same node
       r.replaceServer(ClusterNode(nodename, "localhost", 6382))
+      r.nodeForKey("testkey1").port should equal (6382)
+      r.hr.cluster.find(_.node.nodename.equals(nodename)).get.port should equal(6382)
       r.get("testkey1") should equal (Some("testvalue1"))
 
       //switch back to master. the old value is loaded
