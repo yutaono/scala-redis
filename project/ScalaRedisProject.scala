@@ -10,7 +10,7 @@ object ScalaRedisProject extends Build
     organization := "net.debasishg",
     version := "2.9",
     scalaVersion := "2.10.0-RC2",
-    crossScalaVersions := Seq("2.10.0-RC2", "2.9.2", "2.9.1"),
+    crossScalaVersions := Seq("2.10.0-RC2"),
 
     scalacOptions <++= scalaVersion.map {sv =>
       if (sv contains "2.10") Seq("-deprecation", "-unchecked", "-feature", "-language:postfixOps")
@@ -46,7 +46,6 @@ object ScalaRedisProject extends Build
           "org.scalatest"     %  ("scalatest_" + v)          % "2.0.M4"      % "test")
     },
 
-    excludeFilter in Test in unmanagedSources ~= { _ || "Patterns*.scala" },
     parallelExecution in Test := false,
     publishTo <<= version { (v: String) => 
       val nexus = "https://oss.sonatype.org/" 

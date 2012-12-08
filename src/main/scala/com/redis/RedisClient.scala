@@ -77,6 +77,37 @@ class RedisClient(override val host: String, override val port: Int)
         None
     }
   }
+  import serialization.Parse
+
+  import scala.concurrent.{Promise, Future}
+  import scala.concurrent.ExecutionContext.Implicits.global
+  import scala.util.Try
+
+  /**
+   * Redis pipelining API without the transaction semantics. The implementation has a non-blocking
+   * semantics and returns a List of Promise. The caller may use Future.firstCompletedOf to get the
+   * first completed task before all tasks have been completed.
+   * If an exception is raised in executing any of the commands, then the corresponding Promise holds
+   * the exception.
+   */
+  def pipelineNoMulti(commands: Seq[() => Any]) = {
+    val ps = List.fill(commands.size)(Promise[Any]())
+    var i = -1
+    val f = Future {
+      commands.map {command =>
+        i = i + 1
+        Try { 
+          command() 
+        } recover {
+          case ex: java.lang.Exception => 
+            ps(i) success ex
+        } foreach {r =>
+          ps(i) success r
+        }
+      }
+    }
+    ps
+  }
 
   class PipelineClient(parent: RedisClient) extends RedisCommand {
     import serialization.Parse
