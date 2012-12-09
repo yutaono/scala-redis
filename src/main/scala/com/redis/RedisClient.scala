@@ -85,10 +85,31 @@ class RedisClient(override val host: String, override val port: Int)
 
   /**
    * Redis pipelining API without the transaction semantics. The implementation has a non-blocking
-   * semantics and returns a List of Promise. The caller may use Future.firstCompletedOf to get the
+   * semantics and returns a <tt>List</tt> of <tt>Promise</tt>. The caller may use <tt>Future.firstCompletedOf</tt> to get the
    * first completed task before all tasks have been completed.
-   * If an exception is raised in executing any of the commands, then the corresponding Promise holds
-   * the exception.
+   * If an exception is raised in executing any of the commands, then the corresponding <tt>Promise</tt> holds
+   * the exception. Here's a sample usage:
+   * <pre>
+   * val x =
+   *  r.pipelineNoMulti(
+   *    List(
+   *      {() => r.set("key", "debasish")},
+   *      {() => r.get("key")},
+   *      {() => r.get("key1")},
+   *      {() => r.lpush("list", "maulindu")},
+   *      {() => r.lpush("key", "maulindu")}     // should raise an exception
+   *    )
+   *  )
+   * </pre>
+   *
+   * This queues up all commands and does pipelining. The returned r is a <tt>List</tt> of <tt>Promise</tt>. The client
+   * may want to wait for all to complete using:
+   *
+   * <pre>
+   * val result = x.map{a => Await.result(a.future, timeout)}
+   * </pre>
+   *
+   * Or the client may wish to track and get the promises as soon as the underlying <tt>Future</tt> is completed.
    */
   def pipelineNoMulti(commands: Seq[() => Any]) = {
     val ps = List.fill(commands.size)(Promise[Any]())
