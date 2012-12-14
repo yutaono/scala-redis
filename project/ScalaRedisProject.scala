@@ -9,8 +9,8 @@ object ScalaRedisProject extends Build
   lazy val commonSettings: Seq[Setting[_]] = Seq(
     organization := "net.debasishg",
     version := "2.9",
-    scalaVersion := "2.10.0-RC2",
-    crossScalaVersions := Seq("2.10.0-RC2"),
+    scalaVersion := "2.10.0-RC5",
+    crossScalaVersions := Seq("2.10.0-RC5"),
 
     scalacOptions <++= scalaVersion.map {sv =>
       if (sv contains "2.10") Seq("-deprecation", "-unchecked", "-feature", "-language:postfixOps")
@@ -27,13 +27,13 @@ object ScalaRedisProject extends Build
       if (v contains "2.10")
         Seq(
           "commons-pool"      % "commons-pool"             % "1.6",
-          "org.scala-lang"    %  "scala-actors"            % "2.10.0-RC2",
-          "com.typesafe.akka" %  "akka-actor_2.10.0-RC2"   % "2.1.0-RC2",
+          "org.scala-lang"    %  "scala-actors"            % "2.10.0-RC5",
+          "com.typesafe.akka" %  "akka-actor_2.10.0-RC5"   % "2.1.0-RC5",
           "org.slf4j"         %  "slf4j-api"               % "1.6.6",
           "org.slf4j"         %  "slf4j-log4j12"           % "1.6.6"      % "provided",
           "log4j"             %  "log4j"                   % "1.2.16"     % "provided",
           "junit"             %  "junit"                   % "4.8.1"      % "test",
-          "org.scalatest"     %  "scalatest_2.10.0-RC2"    % "2.0.M4"     % "test")
+          "org.scalatest"     %  "scalatest_2.10.0-RC5"    % "2.0.M5-B1"     % "test")
       else
         Seq(
           "commons-pool"      % "commons-pool"             % "1.6",
