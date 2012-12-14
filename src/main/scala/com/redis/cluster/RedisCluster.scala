@@ -56,6 +56,10 @@ object NoOpKeyTag extends KeyTag {
   def tag(key: Seq[Byte]) = Some(key)
 }
 
+/**
+ * a level of abstraction for each node decoupling it from the address. A node is now identified
+ * by a name, so functions like <tt>replaceServer</tt> works seamlessly.
+ */
 case class ClusterNode(nodename: String, host: String, port: Int, database: Int = 0, maxIdle: Int = 8){
   override def toString = nodename
 }
@@ -95,7 +99,16 @@ abstract class RedisCluster(hosts: ClusterNode*) extends RedisCommand {
     hr addNode new IdentifiableRedisClientPool(server)
   }
 
+  /**
+   * Use Case: Suppose I have a big list of key/value pairs which are replicated in 2 Redis servers -
+   * one having test values for every key and the other having production values for the same set of
+   * keys. In a cluster using <tt>replaceServer</tt> I can switch between test mode and production mode
+   * without disturbing the hash ring. This gives an additional level of abstraction on the node name
+   * decoupling it from the node address.
+   */
+
   // replace a server
+  // very useful when you want to replace a server in test mode to one in production mode
   def replaceServer(server: ClusterNode) = {
     hr replaceNode new IdentifiableRedisClientPool(server) match {
         case Some(clientPool) => clientPool.close
