@@ -220,7 +220,7 @@ abstract class RedisCluster(hosts: ClusterNode*) extends RedisCommand {
    * ListOperations
    */
   override def lpush(key: Any, value: Any, values: Any*)(implicit format: Format) = processForKey(key)(_.lpush(key, value, values:_*))
-  override def rpush(key: Any, value: Any, values: Any*)(implicit format: Format) = processForKey(key)(_.lpush(key, value, values:_*))
+  override def rpush(key: Any, value: Any, values: Any*)(implicit format: Format) = processForKey(key)(_.rpush(key, value, values:_*))
   override def llen(key: Any)(implicit format: Format) = processForKey(key)(_.llen(key))
   override def lrange[A](key: Any, start: Int, end: Int)(implicit format: Format, parse: Parse[A]) = processForKey(key)(_.lrange[A](key, start, end))
   override def ltrim(key: Any, start: Int, end: Int)(implicit format: Format) = processForKey(key)(_.ltrim(key, start, end))
