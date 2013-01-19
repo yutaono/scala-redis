@@ -8,7 +8,7 @@ object ScalaRedisProject extends Build
 
   lazy val commonSettings: Seq[Setting[_]] = Seq(
     organization := "net.debasishg",
-    version := "2.9",
+    version := "2.10",
     scalaVersion := "2.10.0",
     crossScalaVersions := Seq("2.10.0-RC5"),
 
@@ -28,7 +28,7 @@ object ScalaRedisProject extends Build
         Seq(
           "commons-pool"      % "commons-pool"             % "1.6",
           "org.scala-lang"    %  "scala-actors"            % "2.10.0",
-          "com.typesafe.akka" %  "akka-actor_2.10.0-RC5"   % "2.1.0-RC5",
+          "com.typesafe.akka" %  "akka-actor_2.10"         % "2.1.0",
           "org.slf4j"         %  "slf4j-api"               % "1.6.6",
           "org.slf4j"         %  "slf4j-log4j12"           % "1.6.6"      % "provided",
           "log4j"             %  "log4j"                   % "1.2.16"     % "provided",
