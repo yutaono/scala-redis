@@ -2,19 +2,48 @@ package com.redis
 
 import serialization._
 
+trait Operations { self: Redis =>
   // SORT
   // sort keys in a set, and optionally pull values for them
-trait Operations { self: Redis =>
-  def sort[A](key:String, limit:Option[Pair[Int, Int]] = None, desc:Boolean = false, alpha:Boolean = false, by:Option[String] = None, get:List[String] = Nil)(implicit format:Format, parse:Parse[A]):Option[List[Option[A]]] = {
-    val commands:List[Any] =
-      List(List(key), limit.map(l => List("LIMIT", l._1, l._2)).getOrElse(Nil)
+  def sort[A](key:String, 
+              limit:Option[Pair[Int, Int]] = None, 
+              desc:Boolean = false, 
+              alpha:Boolean = false, 
+              by:Option[String] = None, 
+              get:List[String] = Nil)(implicit format:Format, parse:Parse[A]):Option[List[Option[A]]] = {
+
+    val commands:List[Any] = makeSortArgs(key, limit, desc, alpha, by, get)
+    send("SORT", commands)(asList)
+  }
+
+  private def makeSortArgs(key:String, 
+              limit:Option[Pair[Int, Int]] = None, 
+              desc:Boolean = false, 
+              alpha:Boolean = false, 
+              by:Option[String] = None, 
+              get:List[String] = Nil): List[Any] = {
+    List(List(key), limit.map(l => List("LIMIT", l._1, l._2)).getOrElse(Nil)
       , (if (desc) List("DESC") else Nil)
       , (if (alpha) List("ALPHA") else Nil)
       , by.map(b => List("BY", b)).getOrElse(Nil)
       , get.map(g => List("GET", g)).flatMap(x=>x)
       ).flatMap(x=>x)
-    send("SORT", commands)(asList)
   }
+
+  // SORT with STORE
+  // sort keys in a set, and store result in the supplied key
+  def sortNStore[A](key:String, 
+              limit:Option[Pair[Int, Int]] = None, 
+              desc:Boolean = false, 
+              alpha:Boolean = false, 
+              by:Option[String] = None, 
+              get:List[String] = Nil,
+              storeAt: String)(implicit format:Format, parse:Parse[A]):Option[Long] = {
+
+    val commands = makeSortArgs(key, limit, desc, alpha, by, get) ::: List("STORE", storeAt)
+    send("SORT", commands)(asLong)
+  }
+
   // KEYS
   // returns all the keys matching the glob-style pattern.
   def keys[A](pattern: Any = "*")(implicit format: Format, parse: Parse[A]): Option[List[Option[A]]] =
