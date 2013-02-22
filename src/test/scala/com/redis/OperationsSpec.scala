@@ -140,4 +140,22 @@ class OperationsSpec extends FunSpec
       r.sort("alltest", None, false, false, None, List("hash-*->description", "hash-*->order")).getOrElse(Nil) should equal(List(Some("one"), Some("100"), Some("two"), Some("25"), Some("three"), Some("50")))
     }
   }
+  import serialization._
+  describe("sortNStore") {
+    it("should give") {
+      r.sadd("alltest", 10)
+      r.sadd("alltest", 30)
+      r.sadd("alltest", 3)
+      r.sadd("alltest", 1)
+
+      // default serialization : return String
+      r.sortNStore("alltest", storeAt = "skey").getOrElse(-1) should equal(4)
+      r.lrange("skey", 0, 10).get should equal(List(Some("1"), Some("3"), Some("10"), Some("30")))
+
+      // Long serialization : return Long
+      implicit val parseLong = Parse[Long](new String(_).toLong)
+      r.sortNStore[Long]("alltest", storeAt = "skey").getOrElse(-1) should equal(4)
+      r.lrange("skey", 0, 10).get should equal(List(Some(1), Some(3), Some(10), Some(30)))
+    }
+  }
 }
