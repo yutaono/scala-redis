@@ -1,4 +1,4 @@
-package com.redis.akka
+package com.redis.nonblocking
 
 import java.net.InetSocketAddress
 import scala.concurrent.{ExecutionContext, Await}
@@ -13,7 +13,6 @@ import ExecutionContext.Implicits.global
 import scala.language.existentials
 
 import ProtocolUtils._
-import RedisCommands._
 import RedisReplies._
 
 class RedisClient(remote: InetSocketAddress) extends Actor {
@@ -21,7 +20,7 @@ class RedisClient(remote: InetSocketAddress) extends Actor {
   import context.system
 
   class KeyNotFoundException extends Exception
-  val promiseQueue = new scala.collection.mutable.Queue[RedisCommand[_]]
+  val promiseQueue = new scala.collection.mutable.Queue[RedisCommand]
   IO(Tcp) ! Connect(remote)
 
   def receive = {
@@ -35,7 +34,7 @@ class RedisClient(remote: InetSocketAddress) extends Actor {
       connection ! Register(self)
 
       context become {
-        case command: RedisCommand[_] => 
+        case command: RedisCommand => 
           println("got command: " + command)
           sendRedisCommand(connection, command)
 
@@ -52,7 +51,8 @@ class RedisClient(remote: InetSocketAddress) extends Actor {
         case _: ConnectionClosed => context stop self
       }
   }
-  def sendRedisCommand(conn: ActorRef, command: RedisCommand[_])(implicit ec: ExecutionContext) = {
+
+  def sendRedisCommand(conn: ActorRef, command: RedisCommand)(implicit ec: ExecutionContext) = {
     conn ! Write(ByteString(command.line))
     promiseQueue += command
     val f = command.promise.future
@@ -72,7 +72,6 @@ object RedisClient {
 
     val numKeys = 3
     val (keys, values) = (1 to numKeys map { num => ("hello" + num, "world" + num) }).unzip
-    import RedisCommands._
     Thread.sleep(2000)
 
     // set a bunch of stuff
@@ -86,7 +85,7 @@ object RedisClient {
         case _ => println("Failed to set key " + key + " to value " + value)
       }
       result onFailure {
-        case t: Exception => t.printStackTrace; println("Failure: Failed to set key " + key + " to value " + value + " : " + t)
+        case t: Exception => println("Failure: Failed to set key " + key + " to value " + value + " : " + t)
       }
     }
 

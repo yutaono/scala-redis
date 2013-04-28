@@ -1,4 +1,4 @@
-package com.redis.akka
+package com.redis.nonblocking
 
 import serialization._
 import Parse.{Implicits => Parsers}
@@ -15,19 +15,6 @@ object RedisReplies {
    * <li> In a Bulk Reply the first byte of the reply is "$"</li>
    * <li> In a Multi Bulk Reply the first byte of the reply s "*"</li>
    */
-
-  /**
-   * Response codes from the Redis server
-   */
-  val ERR    = '-'
-  val OK     = "OK".getBytes("UTF-8")
-  val QUEUED = "QUEUED".getBytes("UTF-8")
-  val SINGLE = '+'
-  val BULK   = '$'
-  val MULTI  = '*'
-  val INT    = ':'
-
-  val LS     = "\r\n".getBytes("UTF-8")
 
   type Reply[T] = PartialFunction[(Char, Array[Byte], RedisReply), T]
   type SingleReply = Reply[Option[Array[Byte]]]
@@ -80,7 +67,7 @@ object RedisReplies {
 
     // def asExec(handlers: Seq[() => Any]): Option[List[Any]] = receive(execReply(handlers))
 
-    def asSet[T: Parse]: Option[Set[Option[T]]] = asList map (_.toSet)
+    def asSet[T: Parse]: Option[collection.immutable.Set[Option[T]]] = asList map (_.toSet)
 
     def asAny = receive(longReply orElse singleLineReply orElse bulkReply orElse multiBulkReply)
   }

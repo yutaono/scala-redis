@@ -1,4 +1,4 @@
-package com.redis.akka.serialization
+package com.redis.nonblocking.serialization
 
 object Format {
   def apply(f: PartialFunction[Any, Any]): Format = new Format(f)

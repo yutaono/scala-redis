@@ -1,8 +1,21 @@
-package com.redis.akka
+package com.redis.nonblocking
 
 import annotation.tailrec
 
 object ProtocolUtils {
+
+  /**
+   * Response codes from the Redis server
+   */
+  val ERR    = '-'
+  val OK     = "OK".getBytes("UTF-8")
+  val QUEUED = "QUEUED".getBytes("UTF-8")
+  val SINGLE = '+'
+  val BULK   = '$'
+  val MULTI  = '*'
+  val INT    = ':'
+
+  val LS     = "\r\n".getBytes("UTF-8")
 
   val _cr: Byte        = '\r'.toByte
   val _lf: Byte        = '\n'.toByte
