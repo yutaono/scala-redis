@@ -12,6 +12,7 @@ import akka.util.{ByteString, Timeout}
 import akka.actor._
 import ExecutionContext.Implicits.global
 import scala.annotation.tailrec
+import scala.language.existentials
 
 // example adopted from : http://rajivkurian.github.io/blog/2012/12/25/a-simple-redis-client-using-spray-io-actors-futures-and-promises/
 
@@ -58,6 +59,32 @@ object RedisReplies {
     split_a(bytes, List.empty[Array[Byte]], Array.empty[Byte])
   }
 
+  def protocol_split(bytes: Array[Byte]): List[Array[Byte]] = {
+    def protocol_split_a(bytes: Array[Byte], acc: List[Array[Byte]]): List[Array[Byte]] = bytes match {
+      case Array(43, x, y, 13, 10, rest@_*) => {
+        protocol_split_a(rest.toArray, acc ::: List(Array[Byte]('+'.toByte, x, y, 13, 10)))
+      }
+      case o@Array(58, rest@_*) => {
+        val (x, y) = rest.splitAt(rest.indexOfSlice(List(13, 10)) + 2)
+        protocol_split_a(y.toArray, acc ::: List(o.splitAt(1)._1 ++ x))
+      }
+      case o@Array(36, l, 13, 10, rest@_*) => {
+        val (x, y) = rest.splitAt(new String(Array[Byte](l), "UTF-8").toInt + 2)
+        protocol_split_a(y.toArray, acc ::: List(o.splitAt(4)._1 ++ x))
+      }
+      case Array(42, rest@_*) => { 
+        val(l, a) = rest.toArray.splitAt(rest.toArray.indexOfSlice(List(13, 10)) + 2)
+        val r = protocol_split(a)
+        val no = new String(l.dropRight(2), "UTF-8").toInt
+        val (tojoin, others) = r.splitAt(no)
+        acc ::: List(Array[Byte](42) ++ l ++ tojoin.tail.foldLeft(tojoin.head)(_ ++ _)) ::: others
+        // acc ::: List(Array[Byte](42) ++ l ++ tojoin.tail.foldLeft(tojoin.head)(_ ++ Array[Byte]('\r', '\n') ++ _)) ::: others
+      }
+      case Array() => acc
+    }
+    protocol_split_a(bytes, List.empty[Array[Byte]])
+  }
+
   case class RedisReply(s: Array[Byte]) {
     val iter = split(s).iterator
     def get: Option[Array[Byte]] = {
@@ -70,26 +97,44 @@ object RedisReplies {
         (pf orElse errReply) apply ((line(0).toChar,line.slice(1,line.length), this))
       case None => sys.error("Error in receive")
     }
-  }
 
-    /**
-    case class RedisReply(s: ByteString) {
-      def get = s.head match {
-        case INT => longReply apply ((s.head.toChar, s.tail.dropRight(2), ByteString.empty))
-        case SINGLE => singleLineReply apply ((s.head.toChar, s.tail.dropRight(2), ByteString.empty))
-        case BULK => {
-          val (length, snd) = s.tail.splitAt(s.indexOfSlice(crlf))
-          val body = snd.drop(1).take(length.head.toInt)
-          bulkReply apply ((s.head.toChar, length.head, body))
-        }
-        case MULTI => {
-          val (noOfReplies, snd) = s.tail.splitAt(s.indexOfSlice(crlf))
-          val body = snd.drop(1).take(noOfReplies.head.toInt)
-          multiBulkReply apply ((s.head.toChar, noOfReplies.head, body))
-        }
-      }
+    def asString: Option[String] = receive(singleLineReply) map Parsers.parseString
+
+    def asBulk[T](implicit parse: Parse[T]): Option[T] =  receive(bulkReply) map parse
+  
+    def asBulkWithTime[T](implicit parse: Parse[T]): Option[T] = receive(bulkReply orElse multiBulkReply) match {
+      case x: Some[Array[Byte]] => x.map(parse(_))
+      case _ => None
     }
-    **/
+
+    def asLong: Option[Long] =  receive(longReply orElse queuedReplyLong)
+
+    def asBoolean: Option[Boolean] = receive(longReply orElse singleLineReply) match {
+      case Some(n: Int) => Some(n > 0)
+      case Some(s: Array[Byte]) => Parsers.parseString(s) match {
+        case "OK" => Some(true)
+        case "QUEUED" => Some(true)
+        case _ => Some(false)
+      }
+      case _ => None
+    }
+
+    def asList[T](implicit parse: Parse[T]): Option[List[Option[T]]] = receive(multiBulkReply).map(_.map(_.map(parse)))
+
+    def asListPairs[A,B](implicit parseA: Parse[A], parseB: Parse[B]): Option[List[Option[(A,B)]]] =
+      receive(multiBulkReply).map(_.grouped(2).flatMap{
+        case List(Some(a), Some(b)) => Iterator.single(Some((parseA(a), parseB(b))))
+        case _ => Iterator.single(None)
+      }.toList)
+
+    def asQueuedList: Option[List[Option[String]]] = receive(queuedReplyList).map(_.map(_.map(Parsers.parseString)))
+
+    // def asExec(handlers: Seq[() => Any]): Option[List[Any]] = receive(execReply(handlers))
+
+    def asSet[T: Parse]: Option[Set[Option[T]]] = asList map (_.toSet)
+
+    def asAny = receive(longReply orElse singleLineReply orElse bulkReply orElse multiBulkReply)
+  }
 
   val longReply: Reply[Option[Long]] = {
     case (INT, s, _) => Some(Parsers.parseLong(s))
@@ -123,59 +168,98 @@ object RedisReplies {
     case (ERR, s, _) => throw new Exception(Parsers.parseString(s))
     case x => throw new Exception("Protocol error: Got " + x + " as initial reply byte")
   }
+
+  def execReply(handlers: Seq[() => Any]): PartialFunction[(Char, Array[Byte]), Option[List[Any]]] = {
+    case (MULTI, str) =>
+      Parsers.parseInt(str) match {
+        case -1 => None
+        case n if n == handlers.size => 
+          Some(handlers.map(_.apply).toList)
+        case n => throw new Exception("Protocol error: Expected "+handlers.size+" results, but got "+n)
+      }
+  }
+
+  def queuedReplyInt: Reply[Option[Int]] = {
+    case (SINGLE, QUEUED, _) => Some(Int.MaxValue)
+  }
+  
+  def queuedReplyLong: Reply[Option[Long]] = {
+    case (SINGLE, QUEUED, _) => Some(Long.MaxValue)
+    }
+
+  def queuedReplyList: MultiReply = {
+    case (SINGLE, QUEUED, _) => Some(List(Some(QUEUED)))
+  }
 }
 
 
 object RedisCommands {
-  sealed trait RedisCommand {
-    def line: String
+  import RedisReplies._
+
+  def multiBulk(args: Seq[Array[Byte]]): Array[Byte] = {
+    val b = new scala.collection.mutable.ArrayBuilder.ofByte
+    b ++= "*%d".format(args.size).getBytes
+    b ++= LS
+    args foreach { arg =>
+      b ++= "$%d".format(arg.size).getBytes
+      b ++= LS
+      b ++= arg
+      b ++= LS
+    }
+    b.result
   }
 
-  case class Get[A](key: String)(implicit format: Format, parse: Parse[A]) extends RedisCommand {
-    val line = "*2\r\n" +
-               "$3\r\n" +
-               "GET\r\n" +
-               "$" + key.length + "\r\n" +
-               key + "\r\n"
+  sealed trait RedisCommand[R] {
+    def line: Array[Byte]
+    def promise: Promise[_]
+    def reply(s: Array[Byte]): Option[R]
   }
-  case class Set(key: String, value: String)(implicit format: Format) extends RedisCommand {
-    val line = "*3\r\n" +
-               "$3\r\n" +
-               "SET\r\n" +
-               "$" + key.length + "\r\n" +
-               key + "\r\n" +
-               "$" + value.length + "\r\n" +
-               value + "\r\n"
-    lazy val wire = ByteString(line, "UTF-8")
+
+  case class Get[A](key: Any)(implicit format: Format, parse: Parse[A]) extends RedisCommand[A] {
+    val line = multiBulk("GET".getBytes("UTF-8") +: Seq(format.apply(key)))
+    val promise = Promise[Option[A]]
+    def reply(s: Array[Byte]) = {
+      val r = RedisReply(s).asBulk[A]
+      promise.success(r)
+      r
+    }
   }
-  case class LPush(key: String, value: String) extends RedisCommand {
-    val line = "*3\r\n" +
-               "$5\r\n" +
-               "LPUSH\r\n" +
-               "$" + key.length + "\r\n" +
-               key + "\r\n" +
-               "$" + value.length + "\r\n" +
-               value + "\r\n"
+  case class Set(key: Any, value: Any)(implicit format: Format) extends RedisCommand[Boolean] {
+    val line = multiBulk("SET".getBytes("UTF-8") +: (Seq(key, value) map format.apply))
+    val promise = Promise[Option[Boolean]]
+    def reply(s: Array[Byte]) = {
+      val r = RedisReply(s).asBoolean
+      promise.success(r)
+      r
+    }
   }
-  case class RPush(key: String, value: String) extends RedisCommand {
-    val line = "*3\r\n" +
-               "$5\r\n" +
-               "RPUSH\r\n" +
-               "$" + key.length + "\r\n" +
-               key + "\r\n" +
-               "$" + value.length + "\r\n" +
-               value + "\r\n"
+  case class LPush(key: Any, value: Any)(implicit format: Format) extends RedisCommand[Long] {
+    val line = multiBulk("LPUSH".getBytes("UTF-8") +: (Seq(key, value) map format.apply))
+    val promise = Promise[Option[Long]]
+    def reply(s: Array[Byte]) = {
+      val r = RedisReply(s).asLong
+      promise.success(r)
+      r
+    }
   }
-  case class LRange[A](key: String, start: Int, stop: Int) extends RedisCommand {
-    val line = "*4\r\n" +
-               "$6\r\n" +
-               "LRANGE\r\n" +
-               "$" + key.length + "\r\n" +
-               key + "\r\n" +
-               "$" + start.toString.length + "\r\n" +
-               start + "\r\n" +
-               "$" + stop.toString.length + "\r\n" +
-               stop + "\r\n"
+  case class RPush(key: Any, value: Any)(implicit format: Format) extends RedisCommand[Long] {
+    val line = multiBulk("RPUSH".getBytes("UTF-8") +: (Seq(key, value) map format.apply))
+    val promise = Promise[Option[Long]]
+    def reply(s: Array[Byte]) = {
+      val r = RedisReply(s).asLong
+      promise.success(r)
+      r
+    }
+  }
+  case class LRange[A](key: Any, start: Int, stop: Int)(implicit format: Format, parse: Parse[A]) 
+    extends RedisCommand[List[Option[A]]] {
+    val line = multiBulk("LRANGE".getBytes("UTF-8") +: (Seq(key, start, stop) map format.apply))
+    val promise = Promise[Option[List[Option[A]]]]
+    def reply(s: Array[Byte]) = {
+      val r = RedisReply(s).asList
+      promise.success(r)
+      r
+    }
   }
 }
 
@@ -183,9 +267,10 @@ class RedisClient(remote: InetSocketAddress) extends Actor {
   import Tcp._
   import context.system
   import RedisCommands._
+  import RedisReplies._
 
   class KeyNotFoundException extends Exception
-  val promiseQueue = new scala.collection.mutable.Queue[Promise[_]]
+  val promiseQueue = new scala.collection.mutable.Queue[RedisCommand[_]]
   IO(Tcp) ! Connect(remote)
 
   def receive = {
@@ -199,51 +284,16 @@ class RedisClient(remote: InetSocketAddress) extends Actor {
       connection ! Register(self)
 
       context become {
-        case data: RedisCommand if data.line.startsWith("*3") => // rpush command 
-          println("got rpush: " + data)
-          sendRedisCommand(connection, ByteString(data.line, "UTF-8"), Promise[Int]) 
-
-        case data: ByteString if data.decodeString("UTF-8").startsWith("*3") => // set command 
-          println("got set or lpush: " + data.decodeString("UTF-8"))
-          sendRedisCommand(connection, data, Promise[Boolean]) 
-
-        case data: ByteString if data.decodeString("UTF-8").startsWith("*2") => // get command 
-          println("got get: " + data.decodeString("UTF-8"))
-          sendRedisCommand(connection, data, Promise[String]) 
-
-        case data: ByteString if data.decodeString("UTF-8").startsWith("*4") => // lrange command 
-          println("got lrange: " + data.decodeString("UTF-8"))
-          sendRedisCommand(connection, data, Promise[List[String]]) 
+        case command: RedisCommand[_] => 
+          println("got command: " + command)
+          sendRedisCommand(connection, command)
 
         case Received(data) => // redis replies 
-          val r = data.decodeString("UTF-8")
-          val responseArray = r.split("\r\n")
-          breakable {
-            responseArray.zipWithIndex.foreach { case (response, index) =>
-              if (response startsWith "+") { // set
-                val setAnswer = response.substring(1, response.length)
-                val nextPromise = promiseQueue.dequeue.asInstanceOf[Promise[Boolean]]
-                nextPromise success (if (setAnswer == "OK") true else false)
-              } else if (response startsWith "$") { // get
-                val nextPromise = promiseQueue.dequeue.asInstanceOf[Promise[String]]
-                if (response endsWith "-1") {
-                  nextPromise failure (new KeyNotFoundException)
-                } else {
-                  nextPromise success responseArray(index + 1)
-                }
-              } else if (response startsWith ":") { // integer reply : lpush
-                val nextPromise = promiseQueue.dequeue.asInstanceOf[Promise[Int]]
-                val retInt = (response drop 1).toInt
-                nextPromise success (if (retInt >= 0) retInt else -1)
-              } else if (response startsWith "*") { // multi-bulk : lrange
-                val nos = (response drop 1).toInt
-                val elems = responseArray.zipWithIndex.filter(_._2 % 2 == 0).map(_._1).drop(1).toList
-                val nextPromise = promiseQueue.dequeue.asInstanceOf[Promise[List[_]]]
-                if (nos >= 0) nextPromise success elems
-                else nextPromise failure (new KeyNotFoundException)
-                break
-              }
-            }
+          println("got data: " + data.decodeString("UTF-8"))
+          val responseArray = data.toArray[Byte]
+          val replies = protocol_split(responseArray)
+          replies.map {r =>
+            promiseQueue.dequeue reply r
           }
 
         case CommandFailed(w: Write) => println("fatal")
@@ -251,10 +301,10 @@ class RedisClient(remote: InetSocketAddress) extends Actor {
         case _: ConnectionClosed => context stop self
       }
   }
-  def sendRedisCommand(conn: ActorRef, data: ByteString, resultPromise: Promise[_])(implicit ec: ExecutionContext) = {
-    conn ! Write(data)
-    promiseQueue += resultPromise
-    val f = resultPromise.future
+  def sendRedisCommand(conn: ActorRef, command: RedisCommand[_])(implicit ec: ExecutionContext) = {
+    conn ! Write(ByteString(command.line))
+    promiseQueue += command
+    val f = command.promise.future
     pipe(f) to sender
   }
 }
@@ -276,26 +326,26 @@ object RedisClient {
 
     // set a bunch of stuff
     val writeResults = keys zip values map { case (key, value) =>
-      (key, value, (client ? ByteString(Set(key, value).line, "UTF-8")).mapTo[Boolean])
+      (key, value, (client ? Set(key, value)).mapTo[Option[Boolean]])
     }
 
     writeResults foreach { case (key, value, result) =>
       result onSuccess {
-        case someBoolean if someBoolean == true => println("Set " + key + " to value " + value)
+        case Some(someBoolean) if someBoolean == true => println("Set " + key + " to value " + value)
         case _ => println("Failed to set key " + key + " to value " + value)
       }
       result onFailure {
-        case t => println("Failed to set key " + key + " to value " + value + " : " + t)
+        case t: Exception => t.printStackTrace; println("Failure: Failed to set key " + key + " to value " + value + " : " + t)
       }
     }
 
     // get the ones set earlier
-    val readResults = keys map { key => (key, client.ask(ByteString(Get[String](key).line, "UTF-8")).mapTo[String]) }
+    val readResults = keys map { key => (key, client.ask(Get[String](key)).mapTo[Option[String]]) }
     readResults zip values foreach { case ((key, result), expectedValue) =>
       result.onSuccess {
         case resultString =>
           println("Got a result for " + key + ": "+ resultString)
-          assert(resultString == expectedValue)
+          assert(resultString == Some(expectedValue))
       }
       result.onFailure {
         case t => println("Got some exception " + t)
@@ -305,12 +355,12 @@ object RedisClient {
     // lpush a bunch of stuff
     val forpush = List.fill(10)("listk") zip (1 to 10).map(_.toString)
     val writeListResults = forpush map { case (key, value) =>
-      (key, value, (client ? ByteString(LPush(key, value).line, "UTF-8")).mapTo[Int])
+      (key, value, (client ? LPush(key, value)).mapTo[Option[Long]])
     }
 
     writeListResults foreach { case (key, value, result) =>
       result onSuccess {
-        case someInt: Int if someInt > 0 => println("Set " + key + " to value " + value + " and returned " + someInt)
+        case Some(someLong) if someLong > 0 => println("Set " + key + " to value " + value + " and returned " + someLong)
         case _ => println("Failed to set key " + key + " to value " + value)
       }
       result onFailure {
@@ -320,11 +370,11 @@ object RedisClient {
     writeListResults.map(e => Await.result(e._3, 3 seconds))
 
     // do an lrange to check if they were inserted correctly & in proper order
-    val readListResult = client.ask(ByteString(LRange[String]("listk", 0, -1).line, "UTF-8")).mapTo[List[String]]
+    val readListResult = client.ask(LRange[String]("listk", 0, -1)).mapTo[Option[List[String]]]
     readListResult.onSuccess {
       case result =>
         println("Range = " + result)
-        assert(result.map(_.toInt) == List(10, 9, 8, 7, 6, 5, 4, 3, 2, 1))
+        assert(result == Some(List(Some("10"), Some("9"), Some("8"), Some("7"), Some("6"), Some("5"), Some("4"), Some("3"), Some("2"), Some("1"))))
     }
     readListResult.onFailure {
       case t => println("Got some exception " + t)
@@ -333,21 +383,19 @@ object RedisClient {
     // rpush a bunch of stuff
     val forrpush = List.fill(10)("listr") zip (1 to 10).map(_.toString)
     val writeListRes = forrpush map { case (key, value) =>
-      (key, value, (client ? RPush(key, value)).mapTo[Int])
+      (key, value, (client ? RPush(key, value)).mapTo[Option[Long]])
     }
     writeListRes.map(e => Await.result(e._3, 3 seconds))
 
     // do an lrange to check if they were inserted correctly & in proper order
-    val readListRes = client.ask(ByteString(LRange[String]("listr", 0, -1).line, "UTF-8")).mapTo[List[String]]
+    val readListRes = client.ask(LRange[String]("listr", 0, -1)).mapTo[Option[List[String]]]
     readListRes.onSuccess {
       case result =>
         println("Range = " + result)
-        assert(result.map(_.toInt).reverse == List(10, 9, 8, 7, 6, 5, 4, 3, 2, 1))
+        assert(result.map(_.reverse) == Some(List(Some("10"), Some("9"), Some("8"), Some("7"), Some("6"), Some("5"), Some("4"), Some("3"), Some("2"), Some("1"))))
     }
     readListRes.onFailure {
       case t => println("Got some exception " + t)
     }
-
-    // implicit val parseInt = Parse[Int](new String(_).toInt)
   }
 }
