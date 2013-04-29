@@ -5,6 +5,7 @@ import scala.concurrent.{ExecutionContext, Await}
 import scala.collection.immutable.Queue
 import scala.concurrent.duration._
 import akka.pattern.{ask, pipe}
+import akka.event.Logging
 import akka.io.{Tcp, IO}
 import Tcp._
 import akka.util.{ByteString, Timeout}
@@ -19,42 +20,86 @@ class RedisClient(remote: InetSocketAddress) extends Actor {
   import Tcp._
   import context.system
 
-  class KeyNotFoundException extends Exception
+  val log = Logging(context.system, this)
+  var buffer = Vector.empty[RedisCommand]
   val promiseQueue = new scala.collection.mutable.Queue[RedisCommand]
   IO(Tcp) ! Connect(remote)
 
-  def receive = {
-    case CommandFailed(_: Connect) =>
-      println("failed")
+  def receive = baseHandler
+
+  def baseHandler: Receive = {
+    case CommandFailed(c: Connect) =>
+      log.error("Connect failed for " + c.remoteAddress + " with " + c.failureMessage + " stopping ..")
       context stop self
 
-    case c@ Connected(remote, local) =>
-      println(c)
+    case c@Connected(remote, local) =>
+      log.info(c.toString)
       val connection = sender
       connection ! Register(self)
 
       context become {
         case command: RedisCommand => 
-          println("got command: " + command)
-          sendRedisCommand(connection, command)
+          log.info("sending command to Redis: " + command)
+          if (!buffer.isEmpty) buffer.foreach(c => sendRedisCommand(connection, c))
+          else sendRedisCommand(connection, command)
 
-        case Received(data) => // redis replies 
-          println("got data: " + data.decodeString("UTF-8"))
+        case Received(data) => 
+          log.info("got response from Redis: " + data.decodeString("UTF-8"))
           val responseArray = data.toArray[Byte]
           val replies = splitReplies(responseArray)
           replies.map {r =>
             promiseQueue.dequeue reply r
           }
 
-        case CommandFailed(w: Write) => println("fatal")
-        case "close" => connection ! Close
-        case _: ConnectionClosed => context stop self
+        case CommandFailed(w: Write) => {
+          log.error("Write failed for " + w.data.decodeString("UTF-8"))
+          connection ! ResumeWriting
+          context become buffering(connection)
+        }
+        case "close" => {
+          log.info("Got to close ..")
+          if (!buffer.isEmpty) buffer.foreach(c => sendRedisCommand(connection, c))
+          connection ! Close
+        }
+        case c: ConnectionClosed => {
+          log.info("stopping ..")
+          log.info("error cause = " + c.getErrorCause + " isAborted = " + c.isAborted + " isConfirmed = " + c.isConfirmed + " isErrorClosed = " + c.isErrorClosed + " isPeerClosed = " + c.isPeerClosed)
+          context stop self
+        }
       }
   }
 
+  def buffering(conn: ActorRef): Receive = {
+    var peerClosed = false
+    var pingAttempts = 0
+
+    {
+      case command: RedisCommand => {
+        buffer :+= command 
+        pingAttempts += 1
+        if (pingAttempts == 10) {
+          log.info("Can't recover .. closing and discarding buffered commands")
+          conn ! Close
+          context stop self
+        }
+      }
+      case PeerClosed => peerClosed = true
+      case WritingResumed => {
+        if (peerClosed) {
+          log.info("Can't recover .. closing and discarding buffered commands")
+          conn ! Close
+          context stop self
+        } else {
+          context become baseHandler
+        }
+      }
+    }
+  }
+
   def sendRedisCommand(conn: ActorRef, command: RedisCommand)(implicit ec: ExecutionContext) = {
-    conn ! Write(ByteString(command.line))
     promiseQueue += command
+    if (!buffer.isEmpty) buffer = buffer drop 1
+    conn ! Write(ByteString(command.line))
     val f = command.promise.future
     pipe(f) to sender
   }
@@ -147,5 +192,6 @@ object RedisClient {
     readListRes.onFailure {
       case t => println("Got some exception " + t)
     }
+    client ! "close"
   }
 }
