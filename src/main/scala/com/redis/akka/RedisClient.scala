@@ -38,10 +38,15 @@ class RedisClient(remote: InetSocketAddress) extends Actor {
       connection ! Register(self)
 
       context become {
-        case command: RedisCommand => 
+        case command: RedisCommand => { 
           log.info("sending command to Redis: " + command)
+
+          // flush if anything there in buffer before processing next command
           if (!buffer.isEmpty) buffer.foreach(c => sendRedisCommand(connection, c))
-          else sendRedisCommand(connection, command)
+
+          // now process the current command
+          sendRedisCommand(connection, command)
+        }
 
         case Received(data) => 
           log.info("got response from Redis: " + data.decodeString("UTF-8"))
@@ -53,6 +58,8 @@ class RedisClient(remote: InetSocketAddress) extends Actor {
 
         case CommandFailed(w: Write) => {
           log.error("Write failed for " + w.data.decodeString("UTF-8"))
+
+          // write failed : switch to buffering mode: NACK with suspension
           connection ! ResumeWriting
           context become buffering(connection)
         }
