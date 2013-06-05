@@ -16,7 +16,7 @@ trait StringOperations { self: Redis =>
   // PX milliseconds -- Set the specified expire time, in milliseconds.
   // NX -- Only set the key if it does not already exist.
   // XX -- Only set the key if it already exist.
-  def set(key: Any, value: Any, nxxx: Any, expx: Any, time: Long) {
+  def set(key: Any, value: Any, nxxx: Any, expx: Any, time: Long): Boolean = {
     send("SET", List(key, value, nxxx, expx, time))(asBoolean)
   }
 
