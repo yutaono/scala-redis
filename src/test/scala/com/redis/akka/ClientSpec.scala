@@ -38,12 +38,10 @@ class ClientSpec extends FunSpec
   }
 
   override def afterEach = {
-    // r.flushdb
   }
 
   override def afterAll = {
     client ! "close"
-    // r.disconnect
   }
 
   describe("set") {
@@ -81,6 +79,18 @@ class ClientSpec extends FunSpec
     it("should give none for unknown keys") {
       val reads = client.ask(Get[String]("key10")).mapTo[Option[String]]
       Await.result(reads, 3 seconds) should equal(None)
+    }
+  }
+
+  describe("using api") {
+    set("kolkata", "beautiful") apply (client) onSuccess {
+      case Some(r) => r should equal(true)
+      case _ => fail("set should pass")
+    }
+
+    ((set("debasish", "scala") apply client) flatMap (x => get("debasish") apply client)) onSuccess {
+      case Some(r) => r should equal("scala")
+      case _ => fail("should get")
     }
   }
 

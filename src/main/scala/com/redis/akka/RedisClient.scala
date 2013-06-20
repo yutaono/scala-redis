@@ -52,7 +52,7 @@ class RedisClient(remote: InetSocketAddress) extends Actor {
           val responseArray = data.toArray[Byte]
           val replies = splitReplies(responseArray)
           replies.map {r =>
-            promiseQueue.dequeue reply r
+            promiseQueue.dequeue execute r
           }
 
         case CommandFailed(w: Write) => {

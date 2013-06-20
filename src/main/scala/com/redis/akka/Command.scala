@@ -4,9 +4,20 @@ import scala.concurrent.Promise
 import ProtocolUtils._
 
 sealed trait RedisCommand {
-  def line: Array[Byte]
-  def promise: Promise[_]
-  def reply(s: Array[Byte]): Promise[_ <: Option[_]]
+  // command returns Option[Ret]
+  type Ret
+
+  // command input
+  val line: Array[Byte]
+
+  // the promise which will be set by the command
+  lazy val promise = Promise[Option[Ret]]
+
+  // return value
+  val ret: Array[Byte] => Option[Ret]
+
+  // execution of the command
+  final def execute(s: Array[Byte]): Promise[Option[Ret]] = promise success ret(s)
 }
 
 trait StringCommand extends RedisCommand
