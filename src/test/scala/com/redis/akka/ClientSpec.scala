@@ -12,6 +12,8 @@ import ExecutionContext.Implicits.global
 import StringCommands._
 import ListCommands._
 
+import StringOperations._
+
 import org.scalatest.FunSpec
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.BeforeAndAfterAll
