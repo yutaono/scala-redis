@@ -50,10 +50,7 @@ class ClientSpec extends FunSpec
     it("should set values to keys") {
       val numKeys = 3
       val (keys, values) = (1 to numKeys map { num => ("key" + num, "value" + num) }).unzip
-
-      val writes = keys zip values map { case (key, value) =>
-        (client ? Set(key, value)).mapTo[Option[Boolean]]
-      }
+      val writes = keys zip values map { case (key, value) => set(key, value) apply client }
 
       writes foreach { _ onSuccess {
         case Some(r) => r should equal(true)
@@ -66,7 +63,7 @@ class ClientSpec extends FunSpec
     it("should get results for keys set earlier") {
       val numKeys = 3
       val (keys, values) = (1 to numKeys map { num => ("key" + num, "value" + num) }).unzip
-      val reads = keys map { key => client.ask(Get[String](key)).mapTo[Option[String]] }
+      val reads = keys map { key => get(key) apply client }
 
       reads zip values foreach { case (result, expectedValue) =>
         result.onSuccess {
@@ -79,7 +76,7 @@ class ClientSpec extends FunSpec
       reads.map(e => Await.result(e, 3 seconds)) should equal(List(Some("value1"), Some("value2"), Some("value3")))
     }
     it("should give none for unknown keys") {
-      val reads = client.ask(Get[String]("key10")).mapTo[Option[String]]
+      val reads = get("key10") apply client
       Await.result(reads, 3 seconds) should equal(None)
     }
   }

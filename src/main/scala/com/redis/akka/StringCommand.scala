@@ -146,7 +146,8 @@ object StringOperations {
   
   // GETSET (key, value)
   // is an atomic set this value and return the old value command.
-  def getset[A](key: Any, value: Any)(implicit format: Format, parse: Parse[A]): ActorRef => Future[Option[A]] = {client: ActorRef =>
+  def getset[A](key: Any, value: Any)
+    (implicit format: Format, parse: Parse[A]): ActorRef => Future[Option[A]] = {client: ActorRef =>
     client.ask(GetSet[A](key, value)).mapTo[Option[A]] 
   }
 
@@ -158,7 +159,8 @@ object StringOperations {
 
   // SETEX (key, expiry, value)
   // sets the value for the specified key, with an expiry
-  def setex(key: Any, expiry: Int, value: Any)(implicit format: Format): ActorRef => Future[Option[Boolean]] = {client: ActorRef =>
+  def setex(key: Any, expiry: Int, value: Any)
+    (implicit format: Format): ActorRef => Future[Option[Boolean]] = {client: ActorRef =>
     client.ask(SetEx(key, expiry, value)).mapTo[Option[Boolean]] 
   }
 
@@ -188,7 +190,8 @@ object StringOperations {
 
   // MGET (key, key, key, ...)
   // get the values of all the specified keys.
-  def mget[A](key: Any, keys: Any*)(implicit format: Format, parse: Parse[A]): ActorRef => Future[Option[List[Option[A]]]] = {client: ActorRef =>
+  def mget[A](key: Any, keys: Any*)
+    (implicit format: Format, parse: Parse[A]): ActorRef => Future[Option[List[Option[A]]]] = {client: ActorRef =>
     client.ask(MGet[A](key, keys)).mapTo[Option[List[Option[A]]]] 
   }
 
@@ -207,14 +210,16 @@ object StringOperations {
   // SETRANGE key offset value
   // Overwrites part of the string stored at key, starting at the specified offset, 
   // for the entire length of value.
-  def set(key: Any, offset: Int, value: Any)(implicit format: Format): ActorRef => Future[Option[Long]] = {client: ActorRef =>
+  def set(key: Any, offset: Int, value: Any)
+    (implicit format: Format): ActorRef => Future[Option[Long]] = {client: ActorRef =>
     client.ask(SetRange(key, offset, value)).mapTo[Option[Long]] 
   }
 
   // GETRANGE key start end
   // Returns the substring of the string value stored at key, determined by the offsets 
   // start and end (both are inclusive).
-  def getrange[A](key: Any, start: Int, end: Int)(implicit format: Format, parse: Parse[A]): ActorRef => Future[Option[A]] = {client: ActorRef =>
+  def getrange[A](key: Any, start: Int, end: Int)
+    (implicit format: Format, parse: Parse[A]): ActorRef => Future[Option[A]] = {client: ActorRef =>
     client.ask(GetRange[A](key, start, end)).mapTo[Option[A]] 
   }
 
@@ -238,19 +243,22 @@ object StringOperations {
 
   // SETBIT key offset value
   // Sets or clears the bit at offset in the string value stored at key
-  def setbit(key: Any, offset: Int, value: Any)(implicit format: Format): ActorRef => Future[Option[Long]] = {client: ActorRef =>
+  def setbit(key: Any, offset: Int, value: Any)
+    (implicit format: Format): ActorRef => Future[Option[Long]] = {client: ActorRef =>
     client.ask(SetBit(key, offset, value)).mapTo[Option[Long]] 
   }
 
   // BITOP op destKey srcKey...
   // Perform a bitwise operation between multiple keys (containing string values) and store the result in the destination key.
-  def bitop(op: String, destKey: Any, srcKeys: Any*)(implicit format: Format): ActorRef => Future[Option[Long]] = {client: ActorRef =>
+  def bitop(op: String, destKey: Any, srcKeys: Any*)
+    (implicit format: Format): ActorRef => Future[Option[Long]] = {client: ActorRef =>
     client.ask(BitOp(op, destKey, srcKeys)).mapTo[Option[Long]] 
   }
 
   // BITCOUNT key range
   // Count the number of set bits in the given key within the optional range
-  def bitcount(key: Any, range: Option[(Int, Int)] = None)(implicit format: Format): ActorRef => Future[Option[Long]] = {client: ActorRef =>
+  def bitcount(key: Any, range: Option[(Int, Int)] = None)
+    (implicit format: Format): ActorRef => Future[Option[Long]] = {client: ActorRef =>
     client.ask(BitCount(key, range)).mapTo[Option[Long]] 
   }
 }
