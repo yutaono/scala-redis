@@ -192,7 +192,7 @@ object StringOperations {
   // get the values of all the specified keys.
   def mget[A](key: Any, keys: Any*)
     (implicit format: Format, parse: Parse[A]): ActorRef => Future[Option[List[Option[A]]]] = {client: ActorRef =>
-    client.ask(MGet[A](key, keys)).mapTo[Option[List[Option[A]]]] 
+    client.ask(MGet[A](key, keys:_*)).mapTo[Option[List[Option[A]]]] 
   }
 
   // MSET (key1 value1 key2 value2 ..)
@@ -252,7 +252,7 @@ object StringOperations {
   // Perform a bitwise operation between multiple keys (containing string values) and store the result in the destination key.
   def bitop(op: String, destKey: Any, srcKeys: Any*)
     (implicit format: Format): ActorRef => Future[Option[Long]] = {client: ActorRef =>
-    client.ask(BitOp(op, destKey, srcKeys)).mapTo[Option[Long]] 
+    client.ask(BitOp(op, destKey, srcKeys:_*)).mapTo[Option[Long]] 
   }
 
   // BITCOUNT key range

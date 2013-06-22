@@ -9,10 +9,8 @@ import akka.util.Timeout
 import akka.actor._
 import ExecutionContext.Implicits.global
 
-import StringCommands._
-import ListCommands._
-
 import StringOperations._
+import ListOperations._
 
 import org.scalatest.FunSpec
 import org.scalatest.BeforeAndAfterEach
@@ -98,7 +96,7 @@ class ClientSpec extends FunSpec
       val forpush = List.fill(10)("listk") zip (1 to 10).map(_.toString)
 
       val writeListResults = forpush map { case (key, value) =>
-        (key, value, (client ? LPush(key, value)).mapTo[Option[Long]])
+        (key, value, (lpush(key, value) apply client))
       }
 
       writeListResults foreach { case (key, value, result) =>
@@ -112,7 +110,7 @@ class ClientSpec extends FunSpec
       writeListResults.map(e => Await.result(e._3, 3 seconds)) should equal((1 to 10).map(e => Some(e)).toList)
 
       // do an lrange to check if they were inserted correctly & in proper order
-      val readListResult = client.ask(LRange[String]("listk", 0, -1)).mapTo[Option[List[String]]]
+      val readListResult = lrange[String]("listk", 0, -1) apply client
       readListResult.onSuccess {
         case result => result.get should equal ((1 to 10).reverse.map(e => Some(e.toString)).toList)
       }
@@ -123,12 +121,12 @@ class ClientSpec extends FunSpec
     it("should do an rpush and retrieve the values using lrange") {
       val forrpush = List.fill(10)("listr") zip (1 to 10).map(_.toString)
       val writeListRes = forrpush map { case (key, value) =>
-        (key, value, (client ? RPush(key, value)).mapTo[Option[Long]])
+        (key, value, rpush(key, value) apply client)
       }
       writeListRes.map(e => Await.result(e._3, 3 seconds)) should equal((1 to 10).map(e => Some(e)).toList)
 
       // do an lrange to check if they were inserted correctly & in proper order
-      val readListRes = client.ask(LRange[String]("listr", 0, -1)).mapTo[Option[List[String]]]
+      val readListRes = lrange[String]("listr", 0, -1) apply client
       readListRes.onSuccess {
         case result => result.get.reverse should equal ((1 to 10).reverse.map(e => Some(e.toString)).toList)
       }

@@ -118,7 +118,7 @@ object ListOperations {
   // LPUSH (Variadic: >= 2.4)
   // add values to the head of the list stored at key
   def lpush(key: Any, value: Any, values: Any*)(implicit format: Format): ActorRef => Future[Option[Long]] = {client: ActorRef =>
-    client.ask(LPush(key, value, values)).mapTo[Option[Long]] 
+    client.ask(LPush(key, value, values:_*)).mapTo[Option[Long]] 
   }
 
   // LPUSHX (Variadic: >= 2.4)
@@ -130,7 +130,7 @@ object ListOperations {
   // RPUSH (Variadic: >= 2.4)
   // add values to the head of the list stored at key
   def rpush(key: Any, value: Any, values: Any*)(implicit format: Format): ActorRef => Future[Option[Long]] = {client: ActorRef =>
-    client.ask(RPush(key, value, values)).mapTo[Option[Long]] 
+    client.ask(RPush(key, value, values:_*)).mapTo[Option[Long]] 
   }
 
   // RPUSHX (Variadic: >= 2.4)
