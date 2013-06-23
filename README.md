@@ -1,29 +1,13 @@
-# Redis Scala client (Non blocking based on Akka IO)
+## Redis Scala client (Non blocking based on Akka IO)
 
-## Key features of the library
+### Key features of the library
 
 - Native Scala types Set and List responses.
 - Transparent serialization
 - Non blocking
 - Composable with Futures
 
-## Information about redis
-
-Redis is a key-value database. It is similar to memcached but the dataset is not volatile, and values can be strings, exactly like in memcached, but also lists and sets with atomic operations to push/pop elements.
-
-http://redis.io
-
-### Key features of Redis
-
-- Fast in-memory store with asynchronous save to disk.
-- Key value get, set, delete, etc.
-- Atomic operations on sets and lists, union, intersection, trim, etc.
-
-## Requirements
-
-- sbt (get it at http://code.google.com/p/simple-build-tool/)
-
-## Sample usage
+### Sample usage
 
 ```scala
 val kvs = (1 to 10).map(i => s"key_$i").zip(1 to 10)
