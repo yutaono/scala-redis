@@ -1,16 +1,14 @@
-package com.redis.nonblocking
+package com.redis
 
 import java.net.InetSocketAddress
-import scala.concurrent.{ExecutionContext, Await}
+import scala.concurrent.{ExecutionContext, Await, Future}
 import scala.concurrent.duration._
-import akka.pattern.{ask, pipe}
 import akka.event.Logging
 import akka.util.Timeout
 import akka.actor._
 import ExecutionContext.Implicits.global
 
-import StringOperations._
-import ListOperations._
+import api.RedisOps._
 
 import org.scalatest.FunSpec
 import org.scalatest.BeforeAndAfterEach
@@ -18,6 +16,8 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
+
+import serialization._
 
 
 @RunWith(classOf[JUnitRunner])
@@ -79,18 +79,6 @@ class ClientSpec extends FunSpec
     }
   }
 
-  describe("using api") {
-    set("kolkata", "beautiful") apply (client) onSuccess {
-      case Some(r) => r should equal(true)
-      case _ => fail("set should pass")
-    }
-
-    ((set("debasish", "scala") apply client) flatMap (x => get("debasish") apply client)) onSuccess {
-      case Some(r) => r should equal("scala")
-      case _ => fail("should get")
-    }
-  }
-
   describe("lpush") {
     it("should do an lpush and retrieve the values using lrange") {
       val forpush = List.fill(10)("listk") zip (1 to 10).map(_.toString)
@@ -132,5 +120,43 @@ class ClientSpec extends FunSpec
       }
     }
   }
-    
+
+  import Parse.Implicits._
+  describe("non blocking apis using futures") {
+    it("get and set should be non blocking") {
+      val kvs = (1 to 10).map(i => s"key_$i").zip(1 to 10)
+      val setResults = kvs map {case (k, v) =>
+        set(k, v) apply client
+      }
+      val sr = Future.sequence(setResults)
+
+      Await.result(sr.map(_.flatten), 2 seconds).forall(_ == true) should equal(true)
+
+      val ks = (1 to 10).map(i => s"key_$i")
+      val getResults = ks.map {k =>
+        get[Long](k) apply client
+      }
+
+      val gr = Future.sequence(getResults)
+      val result = gr.map(_.flatten.sum)
+
+      Await.result(result, 2 seconds) should equal(55)
+    }
+
+    it("should compose with sequential combinator") {
+      val values = (1 to 100).toList
+      val pushResult = lpush("key", 0, values:_*) apply client
+      val getResult = lrange[Long]("key", 0, -1) apply client
+      
+      val res = for {
+        p <- pushResult.mapTo[Option[Long]]
+        if p.get > 0
+        r <- getResult.mapTo[Option[List[Long]]]
+      } yield (p, r)
+
+      val (count, list) = Await.result(res, 2 seconds)
+      count should equal(Some(101))
+      list.get.reverse should equal((0 to 100).map(a => Some(a)))
+    }
+  }
 }

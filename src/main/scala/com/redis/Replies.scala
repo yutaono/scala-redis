@@ -1,4 +1,4 @@
-package com.redis.nonblocking
+package com.redis
 
 import serialization._
 import Parse.{Implicits => Parsers}

@@ -1,169 +1,113 @@
 package com.redis
 
-import serialization.Format
-import java.net.SocketException
+import java.net.InetSocketAddress
+import scala.concurrent.{ExecutionContext, Await}
+import scala.collection.immutable.Queue
+import scala.concurrent.duration._
+import akka.pattern.{ask, pipe}
+import akka.event.Logging
+import akka.io.{Tcp, IO}
+import akka.util.{ByteString, Timeout}
+import akka.actor._
+import ExecutionContext.Implicits.global
+import scala.language.existentials
 
-object RedisClient {
-  trait SortOrder
-  case object ASC extends SortOrder
-  case object DESC extends SortOrder
+import ProtocolUtils._
+import RedisReplies._
 
-  trait Aggregate
-  case object SUM extends Aggregate
-  case object MIN extends Aggregate
-  case object MAX extends Aggregate
-}
+class RedisClient(remote: InetSocketAddress) extends Actor {
+  import Tcp._
+  import context.system
 
-trait Redis extends IO with Protocol {
+  val log = Logging(context.system, this)
+  var buffer = Vector.empty[RedisCommand]
+  val promiseQueue = new scala.collection.mutable.Queue[RedisCommand]
+  IO(Tcp) ! Connect(remote)
 
-  def send[A](command: String, args: Seq[Any])(result: => A)(implicit format: Format): A = try {
-    write(Commands.multiBulk(command.getBytes("UTF-8") +: (args map (format.apply))))
-    result
-  } catch {
-    case e: RedisConnectionException =>
-      if (reconnect) send(command, args)(result)
-      else throw e
-    case e: SocketException =>
-      if (reconnect) send(command, args)(result)
-      else throw e
-  }
+  def receive = baseHandler
 
-  def send[A](command: String)(result: => A): A = try {
-    write(Commands.multiBulk(List(command.getBytes("UTF-8"))))
-    result
-  } catch {
-    case e: RedisConnectionException =>
-      if (reconnect) send(command)(result)
-      else throw e
-    case e: SocketException =>
-      if (reconnect) send(command)(result)
-      else throw e
-  }
+  def baseHandler: Receive = {
+    case CommandFailed(c: Connect) =>
+      log.error("Connect failed for " + c.remoteAddress + " with " + c.failureMessage + " stopping ..")
+      context stop self
 
-  def cmd(args: Seq[Array[Byte]]) = Commands.multiBulk(args)
+    case c@Connected(remote, local) =>
+      log.info(c.toString)
+      val connection = sender
+      connection ! Register(self)
 
-  protected def flattenPairs(in: Iterable[Product2[Any, Any]]): List[Any] =
-    in.iterator.flatMap(x => Iterator(x._1, x._2)).toList
-}
+      context become {
+        case command: RedisCommand => { 
+          log.info("sending command to Redis: " + command)
 
-trait RedisCommand extends Redis
-  with Operations 
-  with NodeOperations 
-  with StringOperations
-  with ListOperations
-  with SetOperations
-  with SortedSetOperations
-  with HashOperations
-  with EvalOperations
-  
+          // flush if anything there in buffer before processing next command
+          if (!buffer.isEmpty) buffer.foreach(c => sendRedisCommand(connection, c))
 
-class RedisClient(override val host: String, override val port: Int)
-  extends RedisCommand with PubSub {
+          // now process the current command
+          sendRedisCommand(connection, command)
+        }
 
-  connect
+        case Received(data) => 
+          log.info("got response from Redis: " + data.decodeString("UTF-8"))
+          val responseArray = data.toArray[Byte]
+          val replies = splitReplies(responseArray)
+          replies.map {r =>
+            promiseQueue.dequeue execute r
+          }
 
-  def this() = this("localhost", 6379)
-  override def toString = host + ":" + String.valueOf(port)
+        case CommandFailed(w: Write) => {
+          log.error("Write failed for " + w.data.decodeString("UTF-8"))
 
-  def pipeline(f: PipelineClient => Any): Option[List[Any]] = {
-    send("MULTI")(asString) // flush reply stream
-    try {
-      val pipelineClient = new PipelineClient(this)
-      try {
-        f(pipelineClient)
-      } catch {
-        case e: Exception =>
-          send("DISCARD")(asString)
-          throw e
+          // write failed : switch to buffering mode: NACK with suspension
+          connection ! ResumeWriting
+          context become buffering(connection)
+        }
+        case "close" => {
+          log.info("Got to close ..")
+          if (!buffer.isEmpty) buffer.foreach(c => sendRedisCommand(connection, c))
+          connection ! Close
+        }
+        case c: ConnectionClosed => {
+          log.info("stopping ..")
+          log.info("error cause = " + c.getErrorCause + " isAborted = " + c.isAborted + " isConfirmed = " + c.isConfirmed + " isErrorClosed = " + c.isErrorClosed + " isPeerClosed = " + c.isPeerClosed)
+          context stop self
+        }
       }
-      send("EXEC")(asExec(pipelineClient.handlers))
-    } catch {
-      case e: RedisMultiExecException => 
-        None
-    }
   }
-  import serialization.Parse
 
-  import scala.concurrent.{Promise, Future}
-  import scala.concurrent.ExecutionContext.Implicits.global
-  import scala.util.Try
+  def buffering(conn: ActorRef): Receive = {
+    var peerClosed = false
+    var pingAttempts = 0
 
-  /**
-   * Redis pipelining API without the transaction semantics. The implementation has a non-blocking
-   * semantics and returns a <tt>List</tt> of <tt>Promise</tt>. The caller may use <tt>Future.firstCompletedOf</tt> to get the
-   * first completed task before all tasks have been completed.
-   * If an exception is raised in executing any of the commands, then the corresponding <tt>Promise</tt> holds
-   * the exception. Here's a sample usage:
-   * <pre>
-   * val x =
-   *  r.pipelineNoMulti(
-   *    List(
-   *      {() => r.set("key", "debasish")},
-   *      {() => r.get("key")},
-   *      {() => r.get("key1")},
-   *      {() => r.lpush("list", "maulindu")},
-   *      {() => r.lpush("key", "maulindu")}     // should raise an exception
-   *    )
-   *  )
-   * </pre>
-   *
-   * This queues up all commands and does pipelining. The returned r is a <tt>List</tt> of <tt>Promise</tt>. The client
-   * may want to wait for all to complete using:
-   *
-   * <pre>
-   * val result = x.map{a => Await.result(a.future, timeout)}
-   * </pre>
-   *
-   * Or the client may wish to track and get the promises as soon as the underlying <tt>Future</tt> is completed.
-   */
-  def pipelineNoMulti(commands: Seq[() => Any]) = {
-    val ps = List.fill(commands.size)(Promise[Any]())
-    var i = -1
-    val f = Future {
-      commands.map {command =>
-        i = i + 1
-        Try { 
-          command() 
-        } recover {
-          case ex: java.lang.Exception => 
-            ps(i) success ex
-        } foreach {r =>
-          ps(i) success r
+    {
+      case command: RedisCommand => {
+        buffer :+= command 
+        pingAttempts += 1
+        if (pingAttempts == 10) {
+          log.info("Can't recover .. closing and discarding buffered commands")
+          conn ! Close
+          context stop self
+        }
+      }
+      case PeerClosed => peerClosed = true
+      case WritingResumed => {
+        if (peerClosed) {
+          log.info("Can't recover .. closing and discarding buffered commands")
+          conn ! Close
+          context stop self
+        } else {
+          context become baseHandler
         }
       }
     }
-    ps
   }
 
-  class PipelineClient(parent: RedisClient) extends RedisCommand {
-    import serialization.Parse
-
-    var handlers: Vector[() => Any] = Vector.empty
-
-    override def send[A](command: String, args: Seq[Any])(result: => A)(implicit format: Format): A = {
-      write(Commands.multiBulk(command.getBytes("UTF-8") +: (args map (format.apply))))
-      handlers :+= (() => result)
-      receive(singleLineReply).map(Parse.parseDefault)
-      null.asInstanceOf[A] // ugh... gotta find a better way
-    }
-    override def send[A](command: String)(result: => A): A = {
-      write(Commands.multiBulk(List(command.getBytes("UTF-8"))))
-      handlers :+= (() => result)
-      receive(singleLineReply).map(Parse.parseDefault)
-      null.asInstanceOf[A]
-    }
-
-    val host = parent.host
-    val port = parent.port
-
-    // TODO: Find a better abstraction
-    override def connected = parent.connected
-    override def connect = parent.connect
-    override def reconnect = parent.reconnect
-    override def disconnect = parent.disconnect
-    override def clearFd = parent.clearFd
-    override def write(data: Array[Byte]) = parent.write(data)
-    override def readLine = parent.readLine
-    override def readCounted(count: Int) = parent.readCounted(count)
+  def sendRedisCommand(conn: ActorRef, command: RedisCommand)(implicit ec: ExecutionContext) = {
+    promiseQueue += command
+    if (!buffer.isEmpty) buffer = buffer drop 1
+    conn ! Write(ByteString(command.line))
+    val f = command.promise.future
+    pipe(f) to sender
   }
 }
+

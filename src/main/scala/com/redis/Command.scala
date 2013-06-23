@@ -1,4 +1,4 @@
-package com.redis.nonblocking
+package com.redis
 
 import scala.concurrent.Promise
 import ProtocolUtils._

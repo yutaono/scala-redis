@@ -1,4 +1,5 @@
-package com.redis.serialization
+package com.redis
+package serialization
 
 object Format {
   def apply(f: PartialFunction[Any, Any]): Format = new Format(f)
@@ -13,7 +14,6 @@ object Format {
         d.toString
       }
     }
-
 }
 
 class Format(val format: PartialFunction[Any, Any]) {
