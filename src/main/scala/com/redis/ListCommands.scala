@@ -8,7 +8,6 @@ import RedisCommand._
 import RedisReplies._
 import akka.pattern.ask
 import akka.actor._
-import akka.util.Timeout
 
 object ListCommands {
   case class LPush(key: Any, value: Any, values: Any*)(implicit format: Format) extends ListCommand {

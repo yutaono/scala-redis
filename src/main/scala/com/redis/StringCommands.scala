@@ -6,7 +6,6 @@ import serialization._
 import Parse.{Implicits => Parsers}
 import akka.pattern.ask
 import akka.actor._
-import akka.util.Timeout
 import RedisCommand._
 import RedisReplies._
 

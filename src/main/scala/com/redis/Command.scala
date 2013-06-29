@@ -22,6 +22,7 @@ sealed trait RedisCommand {
 
 trait StringCommand extends RedisCommand
 trait ListCommand extends RedisCommand
+trait KeyCommand extends RedisCommand
 
 object RedisCommand {
   def multiBulk(args: Seq[Array[Byte]]): Array[Byte] = {
