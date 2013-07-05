@@ -155,4 +155,10 @@ trait Operations { self: Redis =>
   // auths with the server.
   def auth(secret: Any)(implicit format: Format): Boolean =
     send("AUTH", List(secret))(asBoolean)
+
+  // PERSIST (key)
+  // Remove the existing timeout on key, turning the key from volatile (a key with an expire set) 
+  // to persistent (a key that will never expire as no timeout is associated).
+  def persist(key: Any)(implicit format: Format): Boolean =
+    send("PERSIST", List(key))(asBoolean)
 }

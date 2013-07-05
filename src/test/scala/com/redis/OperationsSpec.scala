@@ -111,6 +111,7 @@ class OperationsSpec extends FunSpec
       r.getType("anshin-2").get should equal("string")
     }
   }
+
   describe("expire") {
     it("should give") {
       r.set("anshin-1", "debasish")
@@ -120,6 +121,18 @@ class OperationsSpec extends FunSpec
       r.expire("anshin-3", 1000) should equal(false)
     }
   }
+
+  describe("persist") {
+    it("should give") {
+      r.set("key-2", "maulindu")
+      r.expire("key-2", 1000) should equal(true)
+      r.ttl("key-2") should equal(Some(1000))
+      r.persist("key-2") should equal(true)
+      r.ttl("key-2") should equal(Some(-1))
+      r.persist("key-3") should equal(false)
+    }
+  }
+
   describe("sort") {
     it("should give") {
 // sort[A](key:String, limit:Option[Pair[Int, Int]] = None, desc:Boolean = false, alpha:Boolean = false, by:Option[String] = None, get:List[String] = Nil)(implicit format:Format, parse:Parse[A]):Option[List[Option[A]]] = {
