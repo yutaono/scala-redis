@@ -46,33 +46,22 @@ object SetCommands {
     val ret  = RedisReply(_: Array[Byte]).asBoolean
   }
 
-  trait unionInterOp 
-  case object union extends unionInterOp
-  case object inter extends unionInterOp
+  trait setOp 
+  case object union extends setOp
+  case object inter extends setOp
+  case object diff extends setOp
 
-  case class ∩∪[A](ux: unionInterOp, key: Any, keys: Any*)(implicit format: Format, parse: Parse[A]) extends SetCommand {
+  case class ∩∪∖[A](ux: setOp, key: Any, keys: Any*)(implicit format: Format, parse: Parse[A]) extends SetCommand {
     type Ret = Set[Option[A]]
     val line = multiBulk(
-      (if (ux == inter) "SINTER" else "SUNION").getBytes("UTF-8") +: (key :: keys.toList) map format.apply)
+      (if (ux == inter) "SINTER" else if (ux == union) "SUNION" else "SDIFF").getBytes("UTF-8") +: (key :: keys.toList) map format.apply)
     val ret  = RedisReply(_: Array[Byte]).asSet[A]
   }
   
-  case class UXStore(ux: unionInterOp, destKey: Any, key: Any, keys: Any*)(implicit format: Format) extends SetCommand {
+  case class SUXDStore(ux: setOp, destKey: Any, key: Any, keys: Any*)(implicit format: Format) extends SetCommand {
     type Ret = Long
     val line = multiBulk(
-      (if (ux == inter) "SINTERSTORE" else "SUNIONSTORE").getBytes("UTF-8") +: (destKey :: key :: keys.toList) map format.apply)
-    val ret  = RedisReply(_: Array[Byte]).asLong
-  }
-
-  case class SDiff[A](key: Any, keys: Any*)(implicit format: Format, parse: Parse[A]) extends SetCommand {
-    type Ret = Set[Option[A]]
-    val line = multiBulk("SDIFF".getBytes("UTF-8") +: (key :: keys.toList) map format.apply)
-    val ret  = RedisReply(_: Array[Byte]).asSet[A]
-  }
-  
-  case class SDiffStore(ux: unionInterOp, destKey: Any, key: Any, keys: Any*)(implicit format: Format) extends SetCommand {
-    type Ret = Long
-    val line = multiBulk("SDIFFSTORE".getBytes("UTF-8") +: (destKey :: key :: keys.toList) map format.apply)
+      (if (ux == inter) "SINTERSTORE" else if (ux == union) "SUNIONSTORE" else "SDIFFSTORE").getBytes("UTF-8") +: (destKey :: key :: keys.toList) map format.apply)
     val ret  = RedisReply(_: Array[Byte]).asLong
   }
 
@@ -82,9 +71,15 @@ object SetCommands {
     val ret  = RedisReply(_: Array[Byte]).asSet[A]
   }
 
-  case class SRandMember[A](key: Any, count: Option[Int] = None)(implicit format: Format, parse: Parse[A]) extends SetCommand {
+  case class SRandMember[A](key: Any)(implicit format: Format, parse: Parse[A]) extends SetCommand {
     type Ret = A
-    val line = multiBulk("SRANDMEMBER".getBytes("UTF-8") +: (count.map(Seq(key, _)).getOrElse(Seq(key))) map format.apply)
+    val line = multiBulk("SRANDMEMBER".getBytes("UTF-8") +: (Seq(key) map format.apply))
     val ret  = RedisReply(_: Array[Byte]).asBulk[A]
+  }
+
+  case class SRandMembers[A](key: Any, count: Int)(implicit format: Format, parse: Parse[A]) extends SetCommand {
+    type Ret = List[Option[A]]
+    val line = multiBulk("SRANDMEMBER".getBytes("UTF-8") +: (Seq(key, count) map format.apply))
+    val ret  = RedisReply(_: Array[Byte]).asList[A]
   }
 }
