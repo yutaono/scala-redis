@@ -126,4 +126,11 @@ trait KeyOperations {
   def auth(secret: Any)(implicit format: Format): ActorRef => Future[Option[Boolean]] = {client: ActorRef=>
     client.ask(Auth(secret)).mapTo[Option[Boolean]]
   }
+
+  // PERSIST (key)
+  // Remove the existing timeout on key, turning the key from volatile (a key with an expire set) 
+  // to persistent (a key that will never expire as no timeout is associated).
+  def persist(key: Any)(implicit format: Format): ActorRef => Future[Option[Boolean]] = {client: ActorRef =>
+    client.ask(Persist(key)).mapTo[Option[Boolean]]
+  }
 }

@@ -95,5 +95,11 @@ object KeyCommands {
     val ret: Array[Byte] => Option[Ret] = RedisReply(_).asBoolean
   }
 
+  case class Persist(key: Any)(implicit format: Format) extends KeyCommand {
+    type Ret = Boolean
+    val line = multiBulk("PERSIST".getBytes("UTF-8") +: (Seq(key) map format.apply))
+    val ret: Array[Byte] => Option[Ret] = RedisReply(_).asBoolean
+  }
+
   // case class Select ..
 }
