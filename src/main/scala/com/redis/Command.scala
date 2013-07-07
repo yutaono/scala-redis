@@ -24,8 +24,18 @@ trait StringCommand extends RedisCommand
 trait ListCommand extends RedisCommand
 trait KeyCommand extends RedisCommand
 trait SetCommand extends RedisCommand
+trait SortedSetCommand extends RedisCommand
 
 object RedisCommand {
+  trait SortOrder
+  case object ASC extends SortOrder
+  case object DESC extends SortOrder
+
+  trait Aggregate
+  case object SUM extends Aggregate
+  case object MIN extends Aggregate
+  case object MAX extends Aggregate
+  
   def multiBulk(args: Seq[Array[Byte]]): Array[Byte] = {
     val b = new scala.collection.mutable.ArrayBuilder.ofByte
     b ++= "*%d".format(args.size).getBytes
