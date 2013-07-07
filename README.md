@@ -1,5 +1,7 @@
 ## Redis Scala client (Non blocking based on Akka IO)
 
+**(moved to separate repo https://github.com/debasishg/scala-redis-nb)**
+
 ### Key features of the library
 
 - Native Scala types Set and List responses.
