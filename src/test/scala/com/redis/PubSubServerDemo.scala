@@ -5,6 +5,7 @@ import akka.actor.{ Actor, ActorSystem, Props }
 case class PublishMessage(channel: String, message: String)
 case class SubscribeMessage(channels: List[String])
 case class UnsubscribeMessage(channels: List[String])
+case object GoDown
 
 class Pub extends Actor {
   println("starting publishing service ..")
@@ -14,6 +15,11 @@ class Pub extends Actor {
 
   def receive = {
     case PublishMessage(ch, msg) => publish(ch, msg)
+    case GoDown => 
+      r.quit
+      system.shutdown()
+      system.awaitTermination()
+
     case x => println("Got in Pub " + x)
   }
 
@@ -33,6 +39,11 @@ class Sub extends Actor {
   def receive = {
     case SubscribeMessage(chs) => sub(chs)
     case UnsubscribeMessage(chs) => unsub(chs)
+    case GoDown => 
+      r.quit
+      system.shutdown()
+      system.awaitTermination()
+
     case x => println("Got in Sub " + x)
   }
 
