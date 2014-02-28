@@ -28,20 +28,6 @@ trait Redis extends IO with Protocol {
       else throw e
   }
   
-/*
-  def sendWithoutAuth[A](command: String, args: Seq[Any])(result: => A)(implicit format: Format): A = try {
-    write(Commands.multiBulk(command.getBytes("UTF-8") +: (args map (format.apply))))
-    result
-  } catch {
-    case e: RedisConnectionException =>
-      if (reconnectWithoutAuth) sendWithoutAuth(command, args)(result)
-      else throw e
-    case e: SocketException =>
-      if (reconnectWithoutAuth) sendWithoutAuth(command, args)(result)
-      else throw e
-  }
-*/
-
   def send[A](command: String)(result: => A): A = try {
     write(Commands.multiBulk(List(command.getBytes("UTF-8"))))
     result
@@ -59,12 +45,6 @@ trait Redis extends IO with Protocol {
   protected def flattenPairs(in: Iterable[Product2[Any, Any]]): List[Any] =
     in.iterator.flatMap(x => Iterator(x._1, x._2)).toList
 
-/*
-  def reconnectWithoutAuth: Boolean = {
-    disconnect && connect
-  }
-*/
-    
   def reconnect: Boolean = {
     disconnect && initialize
   }
@@ -86,8 +66,8 @@ trait RedisCommand extends Redis with Operations
   
   override def initialize : Boolean = {
     if(connect) {
+      selectDatabase
       secret.foreach {s => 
-        selectDatabase
         auth(s)
       }
       true
