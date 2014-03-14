@@ -24,6 +24,14 @@ http://redis.io
 
 - sbt (get it at http://code.google.com/p/simple-build-tool/)
 
+## Installation
+
+Add to Build.scala/build.sbt
+
+    libraryDependencies ++= Seq(
+        "net.debasishg" % "redisclient_2.10" % "2.12"
+    )
+
 ## Usage
 
 Start your redis instance (usually redis-server will do it)
