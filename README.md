@@ -22,15 +22,17 @@ http://redis.io
 
 ## Requirements
 
-- sbt (get it at http://code.google.com/p/simple-build-tool/)
+- sbt (get it at http://www.scala-sbt.org/)
 
 ## Installation
 
-Add to Build.scala/build.sbt
+Add to `Build.scala` or `build.sbt`
 
-    libraryDependencies ++= Seq(
-        "net.debasishg" % "redisclient_2.10" % "2.12"
-    )
+```scala
+libraryDependencies ++= Seq(
+    "net.debasishg" % "redisclient_2.10" % "2.12"
+)
+```
 
 ## Usage
 
