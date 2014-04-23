@@ -57,7 +57,7 @@ class PipelineSpec extends FunSpec
             p.lpop("a")
           }
         }
-      thrown.getMessage should equal ("ERR Operation against a key holding the wrong kind of value")
+      thrown.getMessage should equal ("WRONGTYPE Operation against a key holding the wrong kind of value")
       r.get("a").get should equal("abc")
     }
   }
