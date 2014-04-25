@@ -35,7 +35,7 @@ class ListOperationsSpec extends FunSpec
     it("should throw if the key has a non-list value") {
       r.set("anshin-1", "debasish") should equal(true)
       val thrown = the [Exception] thrownBy { r.lpush("anshin-1", "bar") }
-      thrown.getMessage should equal("WRONGTYPE Operation against a key holding the wrong kind of value")
+      thrown.getMessage should include("Operation against a key holding the wrong kind of value")
     }
   }
 
@@ -55,7 +55,7 @@ class ListOperationsSpec extends FunSpec
     it("should throw if the key has a non-list value") {
       r.set("anshin-1", "debasish") should equal(true)
       val thrown = the [Exception] thrownBy { r.lpushx("anshin-1", "bar") }
-      thrown.getMessage should equal("WRONGTYPE Operation against a key holding the wrong kind of value")
+      thrown.getMessage should include("Operation against a key holding the wrong kind of value")
     }
   }
 
@@ -67,7 +67,7 @@ class ListOperationsSpec extends FunSpec
     it("should throw if the key has a non-list value") {
       r.set("anshin-1", "debasish") should equal(true)
       val thrown = the [Exception] thrownBy { r.rpush("anshin-1", "bar") }
-      thrown.getMessage should equal("WRONGTYPE Operation against a key holding the wrong kind of value")
+      thrown.getMessage should include("Operation against a key holding the wrong kind of value")
     }
   }
 
@@ -87,7 +87,7 @@ class ListOperationsSpec extends FunSpec
     it("should throw if the key has a non-list value") {
       r.set("anshin-1", "debasish") should equal(true)
       val thrown = the [Exception] thrownBy { r.rpushx("anshin-1", "bar") }
-      thrown.getMessage should equal("WRONGTYPE Operation against a key holding the wrong kind of value")
+      thrown.getMessage should include("Operation against a key holding the wrong kind of value")
     }
   }
 
@@ -103,7 +103,7 @@ class ListOperationsSpec extends FunSpec
     it("should throw for a non-list key") {
       r.set("anshin-1", "debasish") should equal(true)
       val thrown = the [Exception] thrownBy { r.llen("anshin-1") }
-      thrown.getMessage should equal("WRONGTYPE Operation against a key holding the wrong kind of value")
+      thrown.getMessage should include("Operation against a key holding the wrong kind of value")
     }
   }
 
@@ -199,7 +199,7 @@ class ListOperationsSpec extends FunSpec
       r.lpush("list-1", "5") should equal(Some(2))
       r.lpush("list-1", "4") should equal(Some(3))
       val thrown = the [Exception] thrownBy { r.lset("list-1", 12, "30") }
-      thrown.getMessage should equal("WRONGTYPE index out of range")
+      thrown.getMessage should include("index out of range")
     }
   }
 

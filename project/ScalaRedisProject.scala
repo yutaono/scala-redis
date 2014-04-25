@@ -8,15 +8,12 @@ object ScalaRedisProject extends Build
 
   lazy val commonSettings: Seq[Setting[_]] = Seq(
     organization := "net.debasishg",
-    version := "2.12",
+    version := "2.13",
     scalaVersion := "2.11.0",
-    crossScalaVersions := Seq("2.10.0"),
+    crossScalaVersions := Seq("2.10.0", "2.10.4"),
 
-    scalacOptions <++= scalaVersion.map {sv =>
-      if (sv contains "2.10") Seq("-deprecation", "-unchecked", "-feature", "-language:postfixOps")
-      else Seq("-deprecation", "-unchecked")
-    },
-
+    scalacOptions in Compile ++= Seq( "-unchecked", "-feature", "-language:postfixOps", "-deprecation" ),
+    
     resolvers ++= Seq(akkaRepo)
   )
 
