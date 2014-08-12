@@ -79,6 +79,27 @@ private [redis] trait Reply {
       }
   }
 
+  val bulkReplyMulti: MultiReply = {
+    case (BULK, s) =>
+      Parsers.parseInt(s) match {
+        case -1 => None
+        case l => {
+          val str = readCounted(l)
+          val ignore = readLine // trailing newline
+          Some(List(Some(str)))
+        }
+      }
+  }
+
+  val tupleReply: MultiReply = {
+    case (MULTI, str) =>
+      Parsers.parseInt(str) match {
+        case -1 =>  None
+        case n =>
+          Some(receive(bulkReplyMulti).get ::: receive(multiBulkReply).get)
+      }
+  }
+
   def execReply(handlers: Seq[() => Any]): PartialFunction[(Char, Array[Byte]), Option[List[Any]]] = {
     case (MULTI, str) =>
       Parsers.parseInt(str) match {
@@ -150,6 +171,15 @@ private [redis] trait R extends Reply {
   def asExec(handlers: Seq[() => Any]): Option[List[Any]] = receive(execReply(handlers))
 
   def asSet[T: Parse]: Option[Set[Option[T]]] = asList map (_.toSet)
+
+  def asElementAndListTuple[A,B](implicit parseA: Parse[A], parseB: Parse[B]): Option[(Option[A], Option[List[B]])] =
+    receive(tupleReply) match {
+      case Some(list) if list.head.isDefined =>
+        val cursor = parseA(list.head.get)
+        val keys = list.tail.filter(_.isDefined).map(l => parseB(l.get))
+        Some((Some(cursor), Some(keys)))
+      case _ => None
+    }
 
   def asAny = receive(integerReply orElse singleLineReply orElse bulkReply orElse multiBulkReply)
 }

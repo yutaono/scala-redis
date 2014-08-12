@@ -161,4 +161,19 @@ trait Operations { self: Redis =>
   // to persistent (a key that will never expire as no timeout is associated).
   def persist(key: Any)(implicit format: Format): Boolean =
     send("PERSIST", List(key))(asBoolean)
+
+  // SCAN with MATCH option
+  // SCAN is a cursor based iterator. This means that at every call of the command, the server returns
+  // an updated cursor that the user needs to use as the cursor argument in the next call.
+  // MATCH is possible to only iterate elements matching a given glob-style pattern,
+  // similarly to the behavior of the KEYS command that takes a pattern as only argument.
+  // Basically with COUNT the user specified the amount of work that should be done at every call in order to retrieve elements from the collection.
+  def scan(cursor: Int = 0, pattern: Any = "*", count: Int = 0)(implicit format: Format, parseA: Parse[String], parseB: Parse[String]): Option[(Option[String], Option[List[String]])] =
+    (pattern, count) match {
+      case ("*", 0) => send("SCAN", List(cursor))(asElementAndListTuple)
+      case ("*", _) => send(List(("SCAN", List(cursor)), ("COUNT", List(count))))(asElementAndListTuple)
+      case (_, 0) => send(List(("SCAN", List(cursor)), ("MATCH", List(pattern))))(asElementAndListTuple)
+      case _ => send(List(("SCAN", List(cursor)), ("MATCH", List(pattern)), ("COUNT", List(count))))(asElementAndListTuple)
+    }
+
 }

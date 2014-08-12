@@ -40,6 +40,20 @@ trait Redis extends IO with Protocol {
       else throw e
   }
 
+  def send[A](operations: Seq[(String, Seq[Any])])(result: => A)(implicit format: Format): A = try {
+    write(Commands.multiBulk(operations.map(operation =>
+      operation._1.getBytes("UTF-8") +: (operation._2 map (format.apply))
+    ).reduceLeft(_ ++ _)))
+    result
+  } catch {
+    case e: RedisConnectionException =>
+      if (reconnect) send(operations)(result)
+      else throw e
+    case e: SocketException =>
+      if (reconnect) send(operations)(result)
+      else throw e
+  }
+
   def cmd(args: Seq[Array[Byte]]) = Commands.multiBulk(args)
 
   protected def flattenPairs(in: Iterable[Product2[Any, Any]]): List[Any] =
@@ -114,7 +128,7 @@ class RedisClient(override val host: String, override val port: Int,
         None
     }
   }
-  
+
   import serialization.Parse
 
   import scala.concurrent.{Promise, Future}

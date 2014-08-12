@@ -46,13 +46,12 @@ class OperationsSpec extends FunSpec
       }
     }
   }
-
   describe("randomkey") {
     it("should give") {
       r.set("anshin-1", "debasish")
       r.set("anshin-2", "maulindu")
       r.randomkey match {
-        case Some(s: String) => s should startWith("anshin") 
+        case Some(s: String) => s should startWith("anshin")
         case None => fail("should have 2 elements")
       }
     }
@@ -171,4 +170,66 @@ class OperationsSpec extends FunSpec
       r.lrange("skey", 0, 10).get should equal(List(Some(1), Some(3), Some(10), Some(30)))
     }
   }
+
+
+  describe("scan") {
+    it("should fetch cursor and keys") {
+      r.set("anshin-1", "debasish")
+      r.set("anshin-2", "maulindu")
+      r.scan() match {
+        case Some((Some(cursor), Some(keys))) =>
+          cursor should equal("0")
+          keys.size should equal(2)
+        case _ => fail("should have cursor and 2 elements")
+      }
+    }
+
+    it("should fetch not 0 cursor and many keys") {
+      (1 to 100) foreach { i => r.set(s"anshin-${i}", s"debasish${i}") }
+      r.scan() match {
+        case Some((Some(cursor), Some(keys))) =>
+          cursor should not equal("0")
+        case _ => fail("should have not 0 cursor and many elements")
+      }
+    }
+
+    it("should fetch cursor and keys by match patterns") {
+      r.set("anshin-1", "debasish")
+      r.set("anshin-2", "maulindu")
+      r.set("kiken-1", "maulindu")
+      r.set("kiken-2", "maulindu")
+      r.scan(0, "anshin*") match {
+        case Some((Some(cursor), Some(keys))) =>
+          cursor should equal("0")
+          keys.contains("anshin-1") should equal(true)
+          keys.contains("anshin-2") should equal(true)
+          keys.contains("kiken-1") should equal(false)
+          keys.contains("kiken-2") should equal(false)
+          keys.size should equal(2)
+        case _ => fail("should have cursor and 2 elements")
+      }
+    }
+
+    it("should fetch cursor and keys by count") {
+      (1 to 300) foreach { i => r.set(s"anshin-${i}", "debasish") }
+      r.scan(cursor = 0, count = 100) match {
+        case Some((Some(cursor), Some(keys))) =>
+          cursor should not equal("0")
+          (99 <= keys.size && keys.size <= 102) should equal(true)
+      }
+    }
+
+    it("should fetch cursor and keys by match patterns and count") {
+      (1 to 50) foreach { i => r.set(s"anshin-${i}", "debasish") }
+      (1 to 50) foreach { i => r.set(s"kiken-${i}", "malindu") }
+      r.scan(0, "anshin-*", 100) match {
+        case Some((Some(cursor), Some(keys))) =>
+          (1 to 50) foreach { i =>
+            keys.contains(s"keken-${i}") should equal(false)
+          }
+          keys.size should equal(50)
+      }
+    }
+  }
+
 }
